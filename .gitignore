@@ -159,6 +159,13 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# uv
+uv.lock
+
+# Coverage
+.coverage
+htmlcov/
+
 # Pyre type checker
 .pyre/
 
