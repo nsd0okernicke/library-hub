@@ -19,6 +19,25 @@ Das Projekt ist bewusst überschaubar gehalten, damit der Fokus auf sauberer Arc
 - **Test-First-Ansatz (TDD):** Für jede Schicht werden zuerst die Tests geschrieben, bevor die eigentliche Implementierung folgt
 - **Schicht-für-Schicht:** Die Entwicklung folgt der hexagonalen Schichtstruktur von innen nach außen: Domain → Ports → Application → Adapters → API
 
+### TDD-Zyklus: Red → Green → Refactor
+
+Für jede Einheit (Klasse, Use Case, Adapter, Endpoint) wird der folgende Zyklus **strikt eingehalten**:
+
+```
+🔴 RED    – Tests schreiben, die das gewünschte Verhalten beschreiben.
+            Tests werden ausgeführt → müssen FEHLSCHLAGEN (ImportError /
+            AssertionError / NotImplementedError). Kein Code existiert noch.
+
+🟢 GREEN  – Minimale Implementierung schreiben, die die Tests zum Bestehen
+            bringt. Kein Over-Engineering – nur das Nötigste.
+            Tests werden erneut ausgeführt → müssen alle BESTEHEN.
+
+🔵 REFACTOR – Code aufräumen, Duplikate entfernen, Lesbarkeit verbessern.
+              Tests bleiben grün. Kein neues Verhalten wird hinzugefügt.
+```
+
+**Verbindliche Regel:** Zwischen 🔴 RED und 🟢 GREEN darf **kein Produktionscode** geschrieben werden. Die fehlgeschlagenen Tests werden dokumentiert (Screenshot oder Terminal-Output), bevor die Implementierung beginnt.
+
 ### Schritte (Übersicht)
 | Schritt | Inhalt |
 |---------|--------|

@@ -72,6 +72,11 @@ Die Services kommunizieren ausschließlich asynchron über **Messaging** (Rabbit
 	- **Beide Services parallel:** Jede Architekturschicht wird für `catalog-service` und `loan-service` gleichzeitig implementiert
 	- **Test-First (TDD):** Für jede Schicht werden zuerst Tests geschrieben, bevor die Implementierung folgt
 	- **Schicht-für-Schicht:** Domain → Ports → Application → Adapters → API
+	- **TDD-Zyklus (verbindlich):**
+		1. 🔴 **RED** – Tests schreiben und ausführen → müssen FEHLSCHLAGEN (kein Produktionscode existiert noch)
+		2. 🟢 **GREEN** – Minimale Implementierung, die alle Tests bestehen lässt
+		3. 🔵 **REFACTOR** – Aufräumen ohne neues Verhalten; Tests bleiben grün
+	- Zwischen RED und GREEN darf **kein Produktionscode** geschrieben werden. Der fehlgeschlagene Test-Output wird vor der Implementierung dokumentiert.
 	
 ### Testen
 	- **Teststrategie:** Test-First (TDD) – Tests werden pro Schicht geschrieben, bevor die Implementierung beginnt
