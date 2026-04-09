@@ -49,12 +49,7 @@ python_version = "3.11"
 strict = true
 ignore_missing_imports = true
 
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing --cov-fail-under=90"
-
 [tool.coverage.run]
-source = ["src"]
+source = ["src/loan"]
 omit = ["tests/*"]
 
