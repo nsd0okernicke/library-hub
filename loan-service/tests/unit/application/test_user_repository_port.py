@@ -10,8 +10,8 @@ import uuid
 
 import pytest
 
-from loan.domain.user import User
 from loan.domain.ports.user_repository import UserRepository
+from loan.domain.user import User
 
 _USER = User(name="Alice Müller", email="alice@example.com")
 
