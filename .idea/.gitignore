@@ -1,0 +1,21 @@
+# Default ignored files
+/shelf/
+/workspace.xml
+# Editor-based HTTP Client requests
+/httpRequests/
+# Datasource local storage ignored files
+/dataSources/
+/dataSources.local.xml
+
+# Personal – nicht einchecken
+/tasks.xml
+/usage.statistics.xml
+/dictionaries/
+/shelf/
+*.iml.bak
+copilot.data.migration.ask2agent.xml
+copilotDiffState.xml
+checkstyle-idea.xml
+
+# Root-Modul wird automatisch erzeugt – nicht einchecken
+/library-hub.iml

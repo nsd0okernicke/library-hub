@@ -54,6 +54,11 @@ ignore_missing_imports = true
 source = ["src/loan"]
 omit = ["tests/*"]
 
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["src"]
+
 [tool.mutmut]
 paths_to_mutate = "src/loan/domain/,src/loan/application/"
 runner = "python -m pytest tests/unit/ -x -q --no-cov"
