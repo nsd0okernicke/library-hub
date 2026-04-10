@@ -126,39 +126,53 @@ class TestLoanStatusTransitions:
     # ── Verbotene Übergänge ─────────────────────────────────────────────────
 
     def test_returned_to_any_raises(self) -> None:
-        """RETURNED → * ist verboten (HTTP 409)."""
+        """RETURNED → * ist verboten – Meldung beginnt mit 'Invalid' und enthält 'already returned'."""
         loan = self._make_loan()
         loan.activate()
         loan.return_book()
-        with pytest.raises(ValueError, match="[Ii]nvalid.*transition|already returned"):
+        with pytest.raises(ValueError) as exc_info:
             loan.return_book()
+        msg = str(exc_info.value)
+        assert msg.startswith("Invalid")
+        assert "already returned" in msg
+        assert not msg.startswith("XX")
 
     def test_rejected_to_any_raises(self) -> None:
-        """REJECTED → * ist verboten (HTTP 409)."""
+        """REJECTED → * ist verboten – Meldung beginnt mit 'Invalid'."""
         loan = self._make_loan()
         loan.reject()
-        with pytest.raises(ValueError, match="[Ii]nvalid.*transition|already rejected"):
+        with pytest.raises(ValueError) as exc_info:
             loan.activate()
+        msg = str(exc_info.value)
+        assert msg.startswith("Invalid")
+        assert not msg.startswith("XX")
 
     def test_pending_to_returned_raises(self) -> None:
-        """PENDING → RETURNED ist verboten (muss erst ACTIVE werden)."""
+        """PENDING → RETURNED ist verboten – Meldung beginnt mit 'Invalid' und enthält 'not active'."""
         loan = self._make_loan()
-        with pytest.raises(ValueError, match="[Ii]nvalid.*transition|not active"):
+        with pytest.raises(ValueError) as exc_info:
             loan.return_book()
+        msg = str(exc_info.value)
+        assert msg.startswith("Invalid")
+        assert "not active" in msg
+        assert not msg.startswith("XX")
 
     def test_active_to_rejected_raises(self) -> None:
-        """ACTIVE → REJECTED ist verboten."""
+        """ACTIVE → REJECTED ist verboten – Meldung beginnt mit 'Invalid'."""
         loan = self._make_loan()
         loan.activate()
-        with pytest.raises(ValueError, match="[Ii]nvalid.*transition"):
+        with pytest.raises(ValueError) as exc_info:
             loan.reject()
+        msg = str(exc_info.value)
+        assert msg.startswith("Invalid")
+        assert not msg.startswith("XX")
 
 
 class TestLoanOverdue:
     """Tests für die Überfälligkeits-Logik."""
 
     def test_loan_is_overdue_when_due_date_in_past(self) -> None:
-        """Ausleihe ist überfällig wenn due_date in der Vergangenheit liegt."""
+        """ACTIVE Ausleihe mit due_date in der Vergangenheit ist überfällig."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -168,13 +182,42 @@ class TestLoanOverdue:
         assert loan.is_overdue() is True
 
     def test_loan_is_not_overdue_when_due_date_in_future(self) -> None:
-        """Ausleihe ist nicht überfällig wenn due_date in der Zukunft liegt."""
+        """ACTIVE Ausleihe mit due_date in der Zukunft ist nicht überfällig."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
             due_date=date.today() + timedelta(days=7),
         )
         loan.activate()
+        assert loan.is_overdue() is False
+
+    def test_loan_due_today_is_not_overdue(self) -> None:
+        """ACTIVE Ausleihe mit due_date == heute ist NICHT überfällig (< today, nicht <=)."""
+        loan = Loan(
+            user_id=uuid.uuid4(),
+            isbn=_ISBN,
+            due_date=date.today(),
+        )
+        loan.activate()
+        assert loan.is_overdue() is False
+
+    def test_pending_loan_is_never_overdue(self) -> None:
+        """PENDING Ausleihe ist nie überfällig, auch wenn due_date vergangen."""
+        loan = Loan(
+            user_id=uuid.uuid4(),
+            isbn=_ISBN,
+            due_date=date.today() - timedelta(days=1),
+        )
+        assert loan.is_overdue() is False
+
+    def test_rejected_loan_is_never_overdue(self) -> None:
+        """REJECTED Ausleihe ist nie überfällig."""
+        loan = Loan(
+            user_id=uuid.uuid4(),
+            isbn=_ISBN,
+            due_date=date.today() - timedelta(days=1),
+        )
+        loan.reject()
         assert loan.is_overdue() is False
 
     def test_returned_loan_is_not_overdue(self) -> None:

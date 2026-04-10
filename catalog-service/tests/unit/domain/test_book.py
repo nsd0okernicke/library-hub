@@ -55,11 +55,13 @@ class TestBookCreation:
         assert book_a != book_b
 
     def test_book_repr_contains_isbn_and_title(self) -> None:
-        """__repr__ enthält ISBN und Titel."""
+        """__repr__ beginnt mit 'Book(' und enthält ISBN und Titel (kein XX-Präfix)."""
         book = Book(isbn=_ISBN_A, title="Clean Architecture", author="Robert C. Martin", genre="SE")
-        representation = repr(book)
-        assert "978" in representation
-        assert "Clean Architecture" in representation
+        r = repr(book)
+        assert r.startswith("Book(")
+        assert "978" in r
+        assert "Clean Architecture" in r
+        assert not r.startswith("XX")
 
     def test_book_not_equal_to_non_book(self) -> None:
         """Book verglichen mit einem Nicht-Book gibt NotImplemented zurück."""

@@ -42,14 +42,22 @@ class TestUserCreation:
         assert user_a != user_b
 
     def test_user_email_must_not_be_empty(self) -> None:
-        """Leere E-Mail ist nicht erlaubt."""
-        with pytest.raises((ValueError, Exception)):
+        """Leere E-Mail wirft ValueError – Meldung beginnt mit 'User email'."""
+        with pytest.raises(ValueError) as exc_info:
             User(name="Alice", email="")
+        msg = str(exc_info.value)
+        assert msg.startswith("User email")
+        assert "not be empty" in msg
+        assert not msg.startswith("XX")
 
     def test_user_name_must_not_be_empty(self) -> None:
-        """Leerer Name ist nicht erlaubt."""
-        with pytest.raises((ValueError, Exception)):
+        """Leerer Name wirft ValueError – Meldung beginnt mit 'User name'."""
+        with pytest.raises(ValueError) as exc_info:
             User(name="", email="alice@example.com")
+        msg = str(exc_info.value)
+        assert msg.startswith("User name")
+        assert "not be empty" in msg
+        assert not msg.startswith("XX")
 
     def test_user_not_equal_to_non_user(self) -> None:
         """User verglichen mit einem Nicht-User gibt NotImplemented zurück."""
@@ -67,8 +75,10 @@ class TestUserCreation:
         assert len(user_set) == 2
 
     def test_user_repr_contains_id_and_email(self) -> None:
-        """__repr__ enthält id und email."""
+        """__repr__ beginnt mit 'User(' und enthält email (kein XX-Präfix)."""
         user = User(name="Alice", email="alice@example.com")
-        representation = repr(user)
-        assert "alice@example.com" in representation
+        r = repr(user)
+        assert r.startswith("User(")
+        assert "alice@example.com" in r
+        assert not r.startswith("XX")
 

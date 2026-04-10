@@ -27,9 +27,12 @@ class TestBookStockCreation:
         assert stock.available_count == 0
 
     def test_create_book_stock_with_negative_count_raises(self) -> None:
-        """BookStock mit negativem Bestand ist nicht erlaubt."""
-        with pytest.raises(ValueError, match="available_count"):
+        """BookStock mit negativem Bestand ist nicht erlaubt – Meldung beginnt mit 'available_count'."""
+        with pytest.raises(ValueError) as exc_info:
             BookStock(isbn=_ISBN, available_count=-1)
+        msg = str(exc_info.value)
+        assert msg.startswith("available_count must be >= 0")
+        assert not msg.startswith("XX")
 
 
 class TestBookStockReserve:
@@ -42,10 +45,13 @@ class TestBookStockReserve:
         assert stock.available_count == 2
 
     def test_reserve_on_zero_stock_raises(self) -> None:
-        """reserve() bei Bestand 0 wirft einen ValueError."""
+        """reserve() bei Bestand 0 wirft ValueError mit 'out of stock' (kein XX-Präfix)."""
         stock = BookStock(isbn=_ISBN, available_count=0)
-        with pytest.raises(ValueError, match="out of stock"):
+        with pytest.raises(ValueError) as exc_info:
             stock.reserve()
+        msg = str(exc_info.value)
+        assert "out of stock" in msg
+        assert not msg.startswith("XX")
 
     def test_is_available_returns_true_when_stock_positive(self) -> None:
         """is_available() gibt True zurück wenn Bestand > 0."""

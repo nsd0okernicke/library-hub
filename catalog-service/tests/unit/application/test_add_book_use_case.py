@@ -117,7 +117,7 @@ class TestAddBookUseCase:
     async def test_add_book_duplicate_isbn_raises(
         self, use_case: AddBookUseCase
     ) -> None:
-        """Doppelte ISBN wirft ValueError (→ HTTP 409)."""
+        """Doppelte ISBN wirft ValueError – Meldung beginnt mit 'Book with ISBN'."""
         await use_case.execute(
             isbn=_ISBN,
             title="Clean Architecture",
@@ -125,7 +125,7 @@ class TestAddBookUseCase:
             genre="SE",
             initial_stock=1,
         )
-        with pytest.raises(ValueError, match="[Aa]lready exists|[Dd]uplicate"):
+        with pytest.raises(ValueError) as exc_info:
             await use_case.execute(
                 isbn=_ISBN,
                 title="Other Title",
@@ -133,6 +133,10 @@ class TestAddBookUseCase:
                 genre="SE",
                 initial_stock=1,
             )
+        msg = str(exc_info.value)
+        assert msg.startswith("Book with ISBN")
+        assert "already exists" in msg
+        assert not msg.startswith("XX")
 
     @pytest.mark.asyncio
     async def test_add_book_with_description(
@@ -148,4 +152,5 @@ class TestAddBookUseCase:
             description="A great book.",
         )
         assert book.description == "A great book."
+
 

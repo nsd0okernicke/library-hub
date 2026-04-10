@@ -53,3 +53,8 @@ ignore_missing_imports = true
 [tool.coverage.run]
 source = ["src/loan"]
 omit = ["tests/*"]
+
+[tool.mutmut]
+paths_to_mutate = "src/loan/domain/,src/loan/application/"
+runner = "python -m pytest tests/unit/ -x -q --no-cov"
+tests_dir = "tests/unit/"

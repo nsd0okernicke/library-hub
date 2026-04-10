@@ -38,30 +38,67 @@ class TestIsbnCreation:
         isbn = Isbn("0-306-40615-2")
         assert len(isbn.digits) == 10
 
-    def test_invalid_isbn_wrong_length_raises(self) -> None:
-        """ISBN mit falscher Länge wirft ValueError."""
-        with pytest.raises(ValueError, match="[Ii][Ss][Bb][Nn]"):
-            Isbn("12345")
+    def test_valid_isbn10_with_x_check_digit(self) -> None:
+        """ISBN-10 mit 'X' als Prüfziffer wird akzeptiert (X=10, nicht 11)."""
+        isbn = Isbn("080442957X")
+        assert isbn.digits == "080442957X"
 
-    def test_invalid_isbn13_wrong_check_digit_raises(self) -> None:
-        """ISBN-13 mit falscher Prüfziffer wirft ValueError."""
-        with pytest.raises(ValueError, match="[Ii][Ss][Bb][Nn]|check"):
-            Isbn("9783161484101")
+    def test_isbn10_x_value_is_10_not_11(self) -> None:
+        """X hat Wert 10 (nicht 11) – wenn 11, würde 080442957X fälschlich abgelehnt."""
+        assert Isbn("080442957X") is not None
 
-    def test_invalid_isbn10_wrong_check_digit_raises(self) -> None:
-        """ISBN-10 mit falscher Prüfziffer wirft ValueError."""
-        with pytest.raises(ValueError, match="[Ii][Ss][Bb][Nn]|check"):
-            Isbn("0306406153")
+    def test_isbn10_lowercase_x_is_rejected(self) -> None:
+        """Kleingeschriebenes 'x' ist ungültig."""
+        with pytest.raises(ValueError):
+            Isbn("047196436x")
 
-    def test_empty_string_raises(self) -> None:
-        """Leerer String wirft ValueError."""
-        with pytest.raises(ValueError, match="[Ii][Ss][Bb][Nn]"):
+    def test_empty_string_raises_with_message(self) -> None:
+        """Leerer String wirft ValueError – Meldung beginnt mit 'ISBN must not be empty'."""
+        with pytest.raises(ValueError) as exc_info:
             Isbn("")
+        assert str(exc_info.value).startswith("ISBN must not be empty")
 
-    def test_non_numeric_characters_raise(self) -> None:
-        """Nicht-numerische Zeichen werfen ValueError."""
-        with pytest.raises(ValueError, match="[Ii][Ss][Bb][Nn]"):
+    def test_invalid_isbn_wrong_length_raises_with_message(self) -> None:
+        """ISBN mit falscher Länge wirft ValueError mit 'expected 10 or 13'."""
+        with pytest.raises(ValueError) as exc_info:
+            Isbn("12345")
+        msg = str(exc_info.value)
+        assert "expected 10 or 13" in msg
+        assert not msg.startswith("XX")
+
+    def test_non_numeric_characters_raise_with_message(self) -> None:
+        """Nicht-numerische Zeichen werfen ValueError mit 'invalid characters'."""
+        with pytest.raises(ValueError) as exc_info:
             Isbn("97831614841AB")
+        msg = str(exc_info.value)
+        assert "invalid characters" in msg
+        assert msg.startswith("ISBN")
+        assert not msg.startswith("XX")
+
+    def test_invalid_isbn13_wrong_check_digit_raises_with_message(self) -> None:
+        """ISBN-13 mit falscher Prüfziffer wirft ValueError mit 'invalid check digit'."""
+        with pytest.raises(ValueError) as exc_info:
+            Isbn("9783161484101")
+        msg = str(exc_info.value)
+        assert "invalid check digit" in msg
+        assert not msg.startswith("XX")
+
+    def test_invalid_isbn10_wrong_check_digit_raises_with_message(self) -> None:
+        """ISBN-10 mit falscher Prüfziffer – Meldung beginnt mit 'ISBN-10' (nicht 'XX')."""
+        with pytest.raises(ValueError) as exc_info:
+            Isbn("0306406153")
+        msg = str(exc_info.value)
+        assert msg.startswith("ISBN-10")
+        assert "invalid check digit" in msg
+        assert not msg.startswith("XX")
+
+    def test_isbn10_accumulation_is_addition_not_subtraction(self) -> None:
+        """ISBN-10 Prüfsumme wird mit += berechnet (nicht -=)."""
+        isbn = Isbn("0-306-40615-2")
+        assert isbn.digits == "0306406152"
+        with pytest.raises(ValueError) as exc_info:
+            Isbn("0-306-40615-1")
+        assert "invalid check digit" in str(exc_info.value)
 
 
 class TestIsbnValueSemantics:
@@ -83,10 +120,17 @@ class TestIsbnValueSemantics:
         assert len({a, b, c}) == 2
 
     def test_isbn_is_immutable(self) -> None:
-        """Isbn-Objekt ist unveränderlich."""
+        """Isbn-Objekt ist unveränderlich – kein Setzen von Attributen möglich."""
         isbn = Isbn("978-3-16-148410-0")
-        with pytest.raises((AttributeError, TypeError)):
+        with pytest.raises(AttributeError):
             isbn.digits = "0000000000000"  # type: ignore[misc]
+
+    def test_isbn_repr_starts_with_isbn_class_name(self) -> None:
+        """repr(isbn) beginnt mit 'Isbn(' – kein 'XX'-Präfix."""
+        isbn = Isbn("978-3-16-148410-0")
+        r = repr(isbn)
+        assert r.startswith("Isbn(")
+        assert "XX" not in r
 
     def test_isbn_digits_property_returns_only_digits(self) -> None:
         """digits-Property gibt nur die Ziffern ohne Bindestriche zurück."""
