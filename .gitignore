@@ -159,6 +159,9 @@ venv.bak/
 .dmypy.json
 dmypy.json
 
+# JetBrains IDEs (IntelliJ, PyCharm, etc.)
+.idea/
+
 # uv
 uv.lock
 
