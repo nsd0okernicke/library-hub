@@ -78,6 +78,7 @@ Die Services kommunizieren ausschließlich asynchron über **Messaging** (Rabbit
 		1. 🔴 **RED** – Tests schreiben und ausführen → müssen FEHLSCHLAGEN (kein Produktionscode existiert noch)
 		2. 🟢 **GREEN** – Minimale Implementierung, die alle Tests bestehen lässt
 		3. 🔵 **REFACTOR** – Aufräumen ohne neues Verhalten; Tests bleiben grün
+		4. 🧬 **MUTATE** – `mutmut` ausführen; Mutation Score ≥ 80 % für `domain/` und `application/`
 	- Zwischen RED und GREEN darf **kein Produktionscode** geschrieben werden. Der fehlgeschlagene Test-Output wird vor der Implementierung dokumentiert.
 	
 ### Testen
@@ -277,6 +278,7 @@ Pro Service werden folgende Mindestversionen verwendet:
 | `black`                  | `>=24.0`       | Code-Formatter                         |
 | `ruff`                   | `>=0.4`        | Linter                                 |
 | `mypy`                   | `>=1.10`       | Typ-Prüfung                            |
+| `mutmut`                 | `>=2.4`        | Mutation Testing                       |
 
 ---
 

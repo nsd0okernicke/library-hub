@@ -19,7 +19,7 @@ Das Projekt ist bewusst überschaubar gehalten, damit der Fokus auf sauberer Arc
 - **Test-First-Ansatz (TDD):** Für jede Schicht werden zuerst die Tests geschrieben, bevor die eigentliche Implementierung folgt
 - **Schicht-für-Schicht:** Die Entwicklung folgt der hexagonalen Schichtstruktur von innen nach außen: Domain → Application → Infrastructure
 
-### TDD-Zyklus: Red → Green → Refactor
+### TDD-Zyklus: Red → Green → Refactor → Mutate
 
 Für jede Einheit (Klasse, Use Case, Adapter, Endpoint) wird der folgende Zyklus **strikt eingehalten**:
 
@@ -34,7 +34,38 @@ Für jede Einheit (Klasse, Use Case, Adapter, Endpoint) wird der folgende Zyklus
 
 🔵 REFACTOR – Code aufräumen, Duplikate entfernen, Lesbarkeit verbessern.
               Tests bleiben grün. Kein neues Verhalten wird hinzugefügt.
+
+🧬 MUTATE – Mutation Testing mit `mutmut` ausführen.
+            Ziel: Mutation Score > 80 % pro Modul.
+            Überlebende Mutanten → fehlende/schwache Assertions identifizieren
+            → neue Tests schreiben (→ zurück zu 🔴 RED für die Lücke).
 ```
+
+**Was ist Mutation Testing?**  
+Ein Tool verändert automatisch den Produktionscode an vielen Stellen – jede Änderung heißt **Mutant**
+(z.B. `>` → `>=`, `+` → `-`, `True` → `False`, `"BookReserved"` → `"BookReserved_"`).
+Wird ein Mutant von keinem Test erkannt (alle Tests bleiben grün), hat die Testsuite eine inhaltliche
+Lücke – auch wenn die Coverage 100 % beträgt.
+
+```
+Mutation Score = killed mutants / (killed + survived) × 100
+```
+
+**Wann wird 🧬 MUTATE ausgeführt?**
+- Nach jedem abgeschlossenen 🔵 REFACTOR-Schritt für `domain/` und `application/`
+- Fokus auf reine Businesslogik (kein I/O, kein Framework-Code)
+- `infrastructure/` wird durch Integrations- und API-Tests abgedeckt; Mutation Testing dort ist optional
+
+**Verbindliche Schwellwerte:**
+
+| Paket | Mindest-Mutation-Score |
+|---|---|
+| `domain/` | ≥ 80 % |
+| `application/` | ≥ 80 % |
+| `infrastructure/` | optional |
+
+Score < 80 % gilt als Qualitätsmangel und muss durch zusätzliche Tests behoben werden,
+bevor die nächste Schicht begonnen wird.
 
 **Verbindliche Regel:** Zwischen 🔴 RED und 🟢 GREEN darf **kein Produktionscode** geschrieben werden. Die fehlgeschlagenen Tests werden dokumentiert (Screenshot oder Terminal-Output), bevor die Implementierung beginnt.
 
@@ -47,6 +78,7 @@ Für jede Einheit (Klasse, Use Case, Adapter, Endpoint) wird der folgende Zyklus
 | 3 | Domain-Schicht: Tests → Implementierung (beide Services parallel) |
 | 4 | Ports-Schicht: Contract-Tests → Interfaces unter `domain/ports/` (beide Services parallel) |
 | 5 | Application-Schicht: Unit-Tests mit gemockten Ports → Use Cases (beide Services parallel) |
+| 5.5 | Mutation Testing: `domain/` + `application/` beider Services (`mutmut`, Score ≥ 80 %) |
 | 6 | Infrastructure-Schicht: Integrationstests via Testcontainers → SQLAlchemy-Adapter, RabbitMQ-Adapter (beide Services parallel) |
 | 7 | Infrastructure-Schicht API: API-Tests → FastAPI-Router + Pydantic-Schemas + Mapping (beide Services parallel) |
 | 8 | Event Contract Tests (serviceübergreifend) |
