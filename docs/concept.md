@@ -17,7 +17,7 @@ Das Projekt ist bewusst überschaubar gehalten, damit der Fokus auf sauberer Arc
 ### Vorgehensweise
 - **Beide Services werden parallel entwickelt** – jede Architekturschicht wird für `catalog-service` und `loan-service` gleichzeitig implementiert (erst alle Domain-Modelle, dann alle Ports, usw.)
 - **Test-First-Ansatz (TDD):** Für jede Schicht werden zuerst die Tests geschrieben, bevor die eigentliche Implementierung folgt
-- **Schicht-für-Schicht:** Die Entwicklung folgt der hexagonalen Schichtstruktur von innen nach außen: Domain → Ports → Application → Adapters → API
+- **Schicht-für-Schicht:** Die Entwicklung folgt der hexagonalen Schichtstruktur von innen nach außen: Domain → Application → Infrastructure
 
 ### TDD-Zyklus: Red → Green → Refactor
 
@@ -45,10 +45,10 @@ Für jede Einheit (Klasse, Use Case, Adapter, Endpoint) wird der folgende Zyklus
 | 1 | Python-Umgebungen mit `uv` initialisieren (pro Service) |
 | 2 | Repository-Struktur aufsetzen (beide Services parallel) |
 | 3 | Domain-Schicht: Tests → Implementierung (beide Services parallel) |
-| 4 | Ports-Schicht: Contract-Tests → Interfaces (beide Services parallel) |
+| 4 | Ports-Schicht: Contract-Tests → Interfaces unter `domain/ports/` (beide Services parallel) |
 | 5 | Application-Schicht: Unit-Tests mit gemockten Ports → Use Cases (beide Services parallel) |
-| 6 | Adapter-Schicht: Integrationstests via Testcontainers → Implementierung (beide Services parallel) |
-| 7 | API-Schicht: API-Tests → FastAPI-Router (beide Services parallel) |
+| 6 | Infrastructure-Schicht: Integrationstests via Testcontainers → SQLAlchemy-Adapter, RabbitMQ-Adapter (beide Services parallel) |
+| 7 | Infrastructure-Schicht API: API-Tests → FastAPI-Router + Pydantic-Schemas + Mapping (beide Services parallel) |
 | 8 | Event Contract Tests (serviceübergreifend) |
 | 9 | Infrastruktur (Docker Compose, Kubernetes) |
 
@@ -135,27 +135,93 @@ stateDiagram-v2
 ## High-Level Architektur
 
 ```mermaid
-flowchart TD    
+flowchart TD    
 	subgraph "Catalog Service"
-		A[FastAPI REST API] --> B[Application Services]        
-		B --> C[Domain Model]        
-		C <--> D[Ports: Repository, Message Publisher]        
-		D --> E[Adapters: SQLAlchemy, RabbitMQ]        
-		E <--> F[(PostgreSQL Catalog)]        
-		E <--> G[RabbitMQ]    
+		A[FastAPI REST API] --> B[Application Services]        
+		B --> C[Domain Model]        
+		C <--> D[Ports: Repository, Message Publisher]        
+		D --> E[Adapters: SQLAlchemy, RabbitMQ]        
+		E <--> F[(PostgreSQL Catalog)]        
+		E <--> G[RabbitMQ]    
 	end
 	
-    subgraph "Loan Service"  
-    	H[FastAPI REST API] --> I[Application Services]        
-		I --> J[Domain Model]        
-		J <--> K[Ports: Repository, Message Publisher/Consumer]        
-		K --> L[Adapters: SQLAlchemy, RabbitMQ]        
-		L <--> M[(PostgreSQL Loan)]        
-		L <--> G[RabbitMQ]    
+    subgraph "Loan Service"  
+    	H[FastAPI REST API] --> I[Application Services]        
+		I --> J[Domain Model]        
+		J <--> K[Ports: Repository, Message Publisher/Consumer]        
+		K --> L[Adapters: SQLAlchemy, RabbitMQ]        
+		L <--> M[(PostgreSQL Loan)]        
+		L <--> G[RabbitMQ]    
 	end
 	
-    User[Nutzer / Frontend] <--> A    
+    User[Nutzer / Frontend] <--> A    
 	User <--> H
+```
+
+## Paketstruktur (3-Pakete-Layout)
+
+Jeder Service ist in **drei Hauptpakete** gegliedert, die der Schichtenregel entsprechen: Abhängigkeiten zeigen immer von außen nach innen, niemals umgekehrt.
+
+```
+<service>/src/<service_name>/
+│
+├── domain/                     ← Innerste Schicht – keine Abhängigkeiten nach außen
+│   ├── book.py / loan.py / …   │  Entities, Value Objects (z. B. Isbn), reine Businesslogik
+│   ├── events/                 │  Domain Events (Datenklassen)
+│   └── ports/                  │  Output-Port-Interfaces (ABCs) – definiert von der Domain,
+│       ├── book_repository.py  │  implementiert in infrastructure/
+│       └── message_publisher.py│
+│
+├── application/                ← Mittlere Schicht – kennt domain/, nutzt domain/ports/
+│   └── <use_case>.py           │  Use Cases / Application Services (orchestrieren Domain-Objekte
+│                               │  und rufen Ports auf)
+│
+└── infrastructure/             ← Äußerste Schicht – kennt alles, wird von domain/ nicht gekannt
+    ├── db/                     │  SQLAlchemy ORM-Models + Repository-Implementierungen
+    │   ├── models.py           │    → Mapping: ORM-Model ↔ Domain-Object
+    │   └── <x>_repository.py  │
+    ├── messaging/              │  RabbitMQ-Adapter (Publisher + Consumer)
+    │   ├── publisher.py        │
+    │   └── consumer.py         │
+    ├── api/                    │  FastAPI-Router + Pydantic-Schemas (DTOs)
+    │   └── v1/                 │    → Mapping: DTO ↔ Domain-Object
+    │       ├── schemas/        │
+    │       └── routers/        │
+    └── config/                 │  pydantic-settings (Settings-Klasse)
+        └── settings.py         │
+```
+
+### Schichtenregeln
+
+| Von | Nach | Erlaubt? |
+|---|---|---|
+| `infrastructure/` | `application/` | ✅ |
+| `infrastructure/` | `domain/` | ✅ |
+| `application/` | `domain/` | ✅ |
+| `application/` | `infrastructure/` | ❌ (nur über Ports) |
+| `domain/` | `application/` | ❌ |
+| `domain/` | `infrastructure/` | ❌ |
+
+### Mapping-Strategie (Domain ↔ DB ↔ API)
+
+Die Domain-Klassen (`Book`, `Loan`, …) sind **reine Python-Dataclasses** ohne ORM- oder Pydantic-Abhängigkeit. Das Mapping findet ausschließlich in der `infrastructure/`-Schicht statt:
+
+```
+HTTP-Request (Pydantic Schema)
+        ↓  to_domain()         [infrastructure/api/]
+  Domain Object
+        ↓  from_domain()       [infrastructure/db/]
+  ORM Model (SQLAlchemy)
+        ↓
+  PostgreSQL
+
+PostgreSQL
+        ↑
+  ORM Model (SQLAlchemy)
+        ↑  to_domain()         [infrastructure/db/]
+  Domain Object
+        ↑  from_domain()       [infrastructure/api/]
+HTTP-Response (Pydantic Schema)
 ```
 
 ## Konfiguration & Umgebungsvariablen

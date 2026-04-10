@@ -53,7 +53,9 @@ Die Services kommunizieren ausschließlich asynchron über **Messaging** (Rabbit
 ## 3. Nicht-funktionale Anforderungen
 ### Architektur
 	- Beide Services müssen **hexagonale Architektur** (Ports & Adapters / Clean Architecture) verwenden.
-	- Klare Trennung: Domain → Application → Ports → Adapters
+	- Klare Trennung in drei Hauptpakete: `domain/` → `application/` → `infrastructure/`
+	- Ports (Output-Port-Interfaces) liegen unter `domain/ports/` – definiert von der Domain, implementiert in `infrastructure/`
+	- Mapping zwischen Domain-Objekten, ORM-Models und API-Schemas erfolgt ausschließlich in `infrastructure/`
 	- Keine direkte Datenbank- oder Service-zu-Service-Kommunikation außer über Messaging.
 	
 ### Technische Vorgaben
@@ -71,7 +73,7 @@ Die Services kommunizieren ausschließlich asynchron über **Messaging** (Rabbit
 ### Entwicklungsstrategie
 	- **Beide Services parallel:** Jede Architekturschicht wird für `catalog-service` und `loan-service` gleichzeitig implementiert
 	- **Test-First (TDD):** Für jede Schicht werden zuerst Tests geschrieben, bevor die Implementierung folgt
-	- **Schicht-für-Schicht:** Domain → Ports → Application → Adapters → API
+	- **Schicht-für-Schicht:** Domain → Ports (unter `domain/ports/`) → Application → Infrastructure (DB + Messaging + API)
 	- **TDD-Zyklus (verbindlich):**
 		1. 🔴 **RED** – Tests schreiben und ausführen → müssen FEHLSCHLAGEN (kein Produktionscode existiert noch)
 		2. 🟢 **GREEN** – Minimale Implementierung, die alle Tests bestehen lässt
