@@ -1,6 +1,6 @@
-"""Pydantic-Schemas für Book-Objekte (API-Layer).
+"""Pydantic schemas for Book objects (API layer).
 
-Trennt Request- und Response-Schemas gemäß Clean Architecture.
+Separates request and response schemas following Clean Architecture.
 """
 from typing import Optional
 
@@ -55,4 +55,16 @@ class BooksListResponse(BaseModel):
     """
 
     items: list
+
+
+class BookStockResponse(BaseModel):
+    """Schema für Bestandsantworten (GET /availability, POST /return).
+
+    Attributes:
+        isbn: ISBN-Zeichenkette.
+        available_count: Aktuell verfügbare Exemplare.
+    """
+
+    isbn: str
+    available_count: int
 

@@ -1,6 +1,6 @@
 """Application Use Case: ReturnBookUseCase (Catalog Service).
 
-Implements CAT-6 – Buchbestand bei Rückgabe um 1 erhöhen.
+Implements CAT-6 – Increase book stock by 1 on return.
 Triggered by POST /books/{isbn}/return or a BookReturned event.
 """
 

@@ -1,14 +1,14 @@
-"""Unit-Tests für ReserveBookUseCase und ReturnBookUseCase (Catalog Service).
+"""Unit tests for ReserveBookUseCase and ReturnBookUseCase (Catalog Service).
 
-🔴 RED-Phase: Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
+🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested:
   catalog.application.reserve_book_use_case.ReserveBookUseCase  (CAT-4 incoming)
   catalog.application.return_book_use_case.ReturnBookUseCase     (CAT-6)
 
-ReserveBookUseCase: Wird durch eingehendes BookLoanRequested-Event ausgelöst.
-  → Reserviert den Stock und publiziert BookReserved oder BookOutOfStock.
-ReturnBookUseCase: POST /books/{isbn}/return oder durch BookReturned-Event.
-  → Erhöht den Stock um 1.
+ReserveBookUseCase: triggered by an incoming BookLoanRequested event.
+  → Reserves stock and publishes BookReserved or BookOutOfStock.
+ReturnBookUseCase: triggered by POST /books/{isbn}/return or a BookReturned event.
+  → Increases stock by 1.
 """
 
 from __future__ import annotations
@@ -51,7 +51,7 @@ class FakeMessagePublisher(MessagePublisher):
 # ── ReserveBookUseCase ────────────────────────────────────────────────────────
 
 class TestReserveBookUseCase:
-    """Buch reservieren – ausgelöst durch BookLoanRequested-Event."""
+    """Reserve a book – triggered by an incoming BookLoanRequested event."""
 
     def _make_use_case(
         self, available: int
@@ -66,7 +66,7 @@ class TestReserveBookUseCase:
 
     @pytest.mark.asyncio
     async def test_reserve_available_book_publishes_reserved(self) -> None:
-        """Verfügbares Buch → Stock -1 und BookReserved publiziert."""
+        """Available book → stock -1 and BookReserved published."""
         use_case, publisher = self._make_use_case(available=2)
         await use_case.execute(isbn=_ISBN, loan_id="loan-uuid-1")
         assert len(publisher.published) == 1
@@ -78,7 +78,7 @@ class TestReserveBookUseCase:
 
     @pytest.mark.asyncio
     async def test_reserve_decreases_stock(self) -> None:
-        """Stock wird um 1 verringert."""
+        """Stock is decreased by 1."""
         use_case, _ = self._make_use_case(available=3)
         await use_case.execute(isbn=_ISBN, loan_id="loan-uuid-1")
         stock = await use_case._stock_repo.find_by_isbn(_ISBN)
@@ -87,7 +87,7 @@ class TestReserveBookUseCase:
 
     @pytest.mark.asyncio
     async def test_reserve_out_of_stock_publishes_out_of_stock(self) -> None:
-        """Kein Bestand → BookOutOfStock publiziert, Stock bleibt 0."""
+        """No stock available → BookOutOfStock published, stock remains 0."""
         use_case, publisher = self._make_use_case(available=0)
         await use_case.execute(isbn=_ISBN, loan_id="loan-uuid-2")
         assert len(publisher.published) == 1
@@ -98,7 +98,7 @@ class TestReserveBookUseCase:
 
     @pytest.mark.asyncio
     async def test_reserve_unknown_isbn_raises(self) -> None:
-        """Unbekannte ISBN wirft ValueError."""
+        """Unknown ISBN raises ValueError."""
         use_case, _ = self._make_use_case(available=1)
         unknown = Isbn("978-0-13-468599-1")
         with pytest.raises(ValueError, match="[Nn]ot found|[Nn]o stock"):
@@ -108,7 +108,7 @@ class TestReserveBookUseCase:
 # ── ReturnBookUseCase ─────────────────────────────────────────────────────────
 
 class TestReturnBookUseCase:
-    """CAT-6: Buchbestand bei Rückgabe erhöhen."""
+    """CAT-6: Increase book stock on return."""
 
     def _make_use_case(
         self, available: int
@@ -120,14 +120,14 @@ class TestReturnBookUseCase:
 
     @pytest.mark.asyncio
     async def test_return_increases_stock(self) -> None:
-        """return_book() erhöht Stock um 1."""
+        """return_book() increases stock by 1."""
         use_case = self._make_use_case(available=2)
         stock = await use_case.execute(isbn=_ISBN)
         assert stock.available_count == 3
 
     @pytest.mark.asyncio
     async def test_return_from_zero_increases_to_one(self) -> None:
-        """Stock 0 → 1 nach Rückgabe."""
+        """Stock 0 → 1 after returning the book."""
         use_case = self._make_use_case(available=0)
         stock = await use_case.execute(isbn=_ISBN)
         assert stock.available_count == 1

@@ -1,7 +1,7 @@
-"""Unit-Tests für das Loan-Domain-Modell und LoanStatus (Loan Service).
+"""Unit tests for the Loan domain model and LoanStatus (Loan Service).
 
-🔴 RED-Phase: Diese Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Getestete Klassen:
+🔴 RED phase: These tests must FAIL before any implementation exists.
+Tested classes:
     - loan.domain.loan_status.LoanStatus
     - loan.domain.loan.Loan
 """
@@ -19,17 +19,17 @@ _ISBN = Isbn("978-3-16-148410-0")
 
 
 class TestLoanStatus:
-    """Tests für die LoanStatus-Enumeration."""
+    """Tests for the LoanStatus enumeration."""
 
     def test_all_required_statuses_exist(self) -> None:
-        """Alle vier Status-Werte müssen vorhanden sein."""
+        """All four status values must be present."""
         assert LoanStatus.PENDING
         assert LoanStatus.ACTIVE
         assert LoanStatus.RETURNED
         assert LoanStatus.REJECTED
 
     def test_status_values_are_strings(self) -> None:
-        """Status-Werte sind Strings (für Datenbankpersistierung)."""
+        """Status values are strings (required for database persistence)."""
         assert LoanStatus.PENDING.value == "PENDING"
         assert LoanStatus.ACTIVE.value == "ACTIVE"
         assert LoanStatus.RETURNED.value == "RETURNED"
@@ -37,10 +37,10 @@ class TestLoanStatus:
 
 
 class TestLoanCreation:
-    """Tests für die Erzeugung eines Loan-Domänenobjekts."""
+    """Tests for creating a Loan domain object."""
 
     def test_create_loan_with_all_fields(self) -> None:
-        """Loan kann mit allen Pflichtfeldern erzeugt werden."""
+        """Loan can be created with all required fields."""
         loan_id = uuid.uuid4()
         user_id = uuid.uuid4()
         due = date.today() + timedelta(days=28)
@@ -57,7 +57,7 @@ class TestLoanCreation:
         assert loan.status == LoanStatus.PENDING
 
     def test_create_loan_without_id_generates_uuid(self) -> None:
-        """Wird keine ID angegeben, wird automatisch eine UUID generiert."""
+        """When no id is given, a UUID is generated automatically."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -67,7 +67,7 @@ class TestLoanCreation:
         assert isinstance(loan.id, uuid.UUID)
 
     def test_new_loan_status_is_pending(self) -> None:
-        """Neu angelegte Ausleihe hat Status PENDING."""
+        """A newly created loan has status PENDING."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -76,7 +76,7 @@ class TestLoanCreation:
         assert loan.status == LoanStatus.PENDING
 
     def test_loan_returned_at_is_none_initially(self) -> None:
-        """returned_at ist beim Anlegen None."""
+        """returned_at is None when the loan is first created."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -86,7 +86,7 @@ class TestLoanCreation:
 
 
 class TestLoanStatusTransitions:
-    """Tests für erlaubte und verbotene Zustandsübergänge (concept.md)."""
+    """Tests for allowed and forbidden status transitions (see concept.md)."""
 
     def _make_loan(self) -> Loan:
         return Loan(
@@ -95,38 +95,38 @@ class TestLoanStatusTransitions:
             due_date=date.today() + timedelta(days=28),
         )
 
-    # ── Erlaubte Übergänge ──────────────────────────────────────────────────
+    # ── Allowed transitions ──────────────────────────────────────────────────
 
     def test_pending_to_active_on_book_reserved(self) -> None:
-        """PENDING → ACTIVE wenn BookReserved empfangen."""
+        """PENDING → ACTIVE when BookReserved is received."""
         loan = self._make_loan()
         loan.activate()
         assert loan.status == LoanStatus.ACTIVE
 
     def test_pending_to_rejected_on_book_out_of_stock(self) -> None:
-        """PENDING → REJECTED wenn BookOutOfStock empfangen."""
+        """PENDING → REJECTED when BookOutOfStock is received."""
         loan = self._make_loan()
         loan.reject()
         assert loan.status == LoanStatus.REJECTED
 
     def test_active_to_returned(self) -> None:
-        """ACTIVE → RETURNED bei Rückgabe."""
+        """ACTIVE → RETURNED when the book is returned."""
         loan = self._make_loan()
         loan.activate()
         loan.return_book()
         assert loan.status == LoanStatus.RETURNED
 
     def test_return_sets_returned_at(self) -> None:
-        """return_book() setzt returned_at auf heute."""
+        """return_book() sets returned_at to today."""
         loan = self._make_loan()
         loan.activate()
         loan.return_book()
         assert loan.returned_at == date.today()
 
-    # ── Verbotene Übergänge ─────────────────────────────────────────────────
+    # ── Forbidden transitions ─────────────────────────────────────────────────
 
     def test_returned_to_any_raises(self) -> None:
-        """RETURNED → * ist verboten – Meldung beginnt mit 'Invalid' und enthält 'already returned'."""
+        """RETURNED → * is forbidden – message starts with 'Invalid' and contains 'already returned'."""
         loan = self._make_loan()
         loan.activate()
         loan.return_book()
@@ -138,7 +138,7 @@ class TestLoanStatusTransitions:
         assert not msg.startswith("XX")
 
     def test_rejected_to_any_raises(self) -> None:
-        """REJECTED → * ist verboten – Meldung beginnt mit 'Invalid'."""
+        """REJECTED → * is forbidden – message starts with 'Invalid'."""
         loan = self._make_loan()
         loan.reject()
         with pytest.raises(ValueError) as exc_info:
@@ -148,7 +148,7 @@ class TestLoanStatusTransitions:
         assert not msg.startswith("XX")
 
     def test_pending_to_returned_raises(self) -> None:
-        """PENDING → RETURNED ist verboten – Meldung beginnt mit 'Invalid' und enthält 'not active'."""
+        """PENDING → RETURNED is forbidden – message starts with 'Invalid' and contains 'not active'."""
         loan = self._make_loan()
         with pytest.raises(ValueError) as exc_info:
             loan.return_book()
@@ -158,7 +158,7 @@ class TestLoanStatusTransitions:
         assert not msg.startswith("XX")
 
     def test_active_to_rejected_raises(self) -> None:
-        """ACTIVE → REJECTED ist verboten – Meldung beginnt mit 'Invalid'."""
+        """ACTIVE → REJECTED is forbidden – message starts with 'Invalid'."""
         loan = self._make_loan()
         loan.activate()
         with pytest.raises(ValueError) as exc_info:
@@ -169,10 +169,10 @@ class TestLoanStatusTransitions:
 
 
 class TestLoanOverdue:
-    """Tests für die Überfälligkeits-Logik."""
+    """Tests for the overdue logic."""
 
     def test_loan_is_overdue_when_due_date_in_past(self) -> None:
-        """ACTIVE Ausleihe mit due_date in der Vergangenheit ist überfällig."""
+        """ACTIVE loan with due_date in the past is overdue."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -182,7 +182,7 @@ class TestLoanOverdue:
         assert loan.is_overdue() is True
 
     def test_loan_is_not_overdue_when_due_date_in_future(self) -> None:
-        """ACTIVE Ausleihe mit due_date in der Zukunft ist nicht überfällig."""
+        """ACTIVE loan with due_date in the future is not overdue."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -192,7 +192,7 @@ class TestLoanOverdue:
         assert loan.is_overdue() is False
 
     def test_loan_due_today_is_not_overdue(self) -> None:
-        """ACTIVE Ausleihe mit due_date == heute ist NICHT überfällig (< today, nicht <=)."""
+        """ACTIVE loan with due_date == today is NOT overdue (uses < not <=)."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -202,7 +202,7 @@ class TestLoanOverdue:
         assert loan.is_overdue() is False
 
     def test_pending_loan_is_never_overdue(self) -> None:
-        """PENDING Ausleihe ist nie überfällig, auch wenn due_date vergangen."""
+        """PENDING loan is never overdue, even if due_date has passed."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -211,7 +211,7 @@ class TestLoanOverdue:
         assert loan.is_overdue() is False
 
     def test_rejected_loan_is_never_overdue(self) -> None:
-        """REJECTED Ausleihe ist nie überfällig."""
+        """REJECTED loan is never overdue."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,
@@ -221,7 +221,7 @@ class TestLoanOverdue:
         assert loan.is_overdue() is False
 
     def test_returned_loan_is_not_overdue(self) -> None:
-        """Zurückgegebene Ausleihe gilt nicht als überfällig."""
+        """A returned loan is not considered overdue."""
         loan = Loan(
             user_id=uuid.uuid4(),
             isbn=_ISBN,

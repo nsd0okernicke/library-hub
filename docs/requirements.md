@@ -98,6 +98,7 @@ Die Services kommunizieren ausschließlich asynchron über **Messaging** (Rabbit
 	- **Type Checking:** mypy
 	- **Pre-commit Hooks** empfohlen
 	- Saubere, lesbare und gut dokumentierte Codebase
+	- **Sprache im Code (verbindlich):** Alle Kommentare, Docstrings, Variablen- und Funktionsnamen sowie Fehlermeldungen im Quellcode werden **ausschließlich auf Englisch** verfasst. Deutsche Texte sind im Code nicht erlaubt – auch nicht in Tests. Ausnahme: Testdaten (z. B. Nutzernamen wie „Alice Müller") dürfen deutsche Sonderzeichen enthalten.
 	
 ### Deployment & Infrastruktur
 	- **Lokale Entwicklung:** docker-compose.yml (für schnelles Starten von Services + RabbitMQ + DBs)

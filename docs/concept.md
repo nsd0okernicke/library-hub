@@ -18,6 +18,7 @@ Das Projekt ist bewusst überschaubar gehalten, damit der Fokus auf sauberer Arc
 - **Beide Services werden parallel entwickelt** – jede Architekturschicht wird für `catalog-service` und `loan-service` gleichzeitig implementiert (erst alle Domain-Modelle, dann alle Ports, usw.)
 - **Test-First-Ansatz (TDD):** Für jede Schicht werden zuerst die Tests geschrieben, bevor die eigentliche Implementierung folgt
 - **Schicht-für-Schicht:** Die Entwicklung folgt der hexagonalen Schichtstruktur von innen nach außen: Domain → Application → Infrastructure
+- **Sprache im Code (verbindlich):** Alle Kommentare, Docstrings, Variablen- und Funktionsnamen sowie Fehlermeldungen im Quellcode werden **ausschließlich auf Englisch** verfasst. Deutsche Texte sind im Code nicht erlaubt – auch nicht in Tests. Ausnahme: Testdaten (z. B. Nutzernamen wie „Alice Müller") dürfen Deutsche Sonderzeichen enthalten.
 
 ### TDD-Zyklus: Red → Green → Refactor → Mutate
 

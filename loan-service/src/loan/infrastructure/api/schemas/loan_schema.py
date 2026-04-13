@@ -1,7 +1,11 @@
-"""Pydantic-Schemas für Loan-Objekte (API-Layer).
+"""Pydantic schemas for Loan objects (API layer of the Loan Service).
 
-Trennt Request- und Response-Schemas gemäß Clean Architecture.
+Separates request and response schemas following Clean Architecture.
 """
+import uuid
+from datetime import date
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -10,15 +14,15 @@ class LoanRequest(BaseModel):
 
     Attributes:
         isbn: ISBN des gewünschten Buches.
-        user_id: ID des ausleihenden Nutzers.
+        user_id: UUID des ausleihenden Nutzers.
     """
 
     isbn: str
-    user_id: str
+    user_id: uuid.UUID
 
 
 class LoanResponse(BaseModel):
-    """Schema für ausgehende Ausleih-Antworten.
+    """Schema für einfache Ausleih-Antworten (loan_id + status).
 
     Attributes:
         loan_id: Eindeutige ID der Ausleihe.
@@ -27,6 +31,26 @@ class LoanResponse(BaseModel):
 
     loan_id: str
     status: str
+
+
+class LoanDetailResponse(BaseModel):
+    """Schema für detaillierte Ausleih-Antworten.
+
+    Attributes:
+        loan_id: Eindeutige ID der Ausleihe.
+        isbn: ISBN des ausgeliehenen Buches.
+        user_id: UUID des Nutzers.
+        status: Aktueller Status.
+        due_date: Fälligkeitsdatum.
+        returned_at: Rückgabedatum (oder None).
+    """
+
+    loan_id: uuid.UUID
+    isbn: str
+    user_id: uuid.UUID
+    status: str
+    due_date: date
+    returned_at: Optional[date] = None
 
 
 class LoansListResponse(BaseModel):
