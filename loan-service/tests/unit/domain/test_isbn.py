@@ -93,12 +93,19 @@ class TestIsbnCreation:
         assert not msg.startswith("XX")
 
     def test_isbn10_accumulation_is_addition_not_subtraction(self) -> None:
-        """ISBN-10 checksum uses += (not -=)."""
+        """ISBN-10 checksum uses += not -= (kill += → -= mutant).
+
+        With subtraction the weighted sum for 0306406152 would be negative and
+        not divisible by 11, so the valid ISBN would be incorrectly rejected.
+        """
         isbn = Isbn("0-306-40615-2")
         assert isbn.digits == "0306406152"
         with pytest.raises(ValueError) as exc_info:
             Isbn("0-306-40615-1")
         assert "invalid check digit" in str(exc_info.value)
+        # Second valid ISBN-10 further constrains the arithmetic direction
+        isbn2 = Isbn("0471958697")
+        assert isbn2.digits == "0471958697"
 
 
 class TestIsbnValueSemantics:
@@ -122,8 +129,12 @@ class TestIsbnValueSemantics:
     def test_isbn_is_immutable(self) -> None:
         """Isbn object is immutable – setting attributes raises AttributeError."""
         isbn = Isbn("978-3-16-148410-0")
-        with pytest.raises(AttributeError):
+        with pytest.raises(AttributeError) as exc_info:
             isbn.digits = "0000000000000"  # type: ignore[misc]
+        msg = str(exc_info.value)
+        assert "immutable" in msg
+        # kill mutant: error message must NOT be wrapped in XX...XX
+        assert "XX" not in msg
 
     def test_isbn_repr_starts_with_isbn_class_name(self) -> None:
         """repr(isbn) starts with 'Isbn(' – no 'XX' prefix."""

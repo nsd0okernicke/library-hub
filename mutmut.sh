@@ -140,6 +140,9 @@ done
 echo ""
 echo "✅ Done. Surviving mutants that are structurally unkillable:"
 echo "   - Port @abstractmethod mutations (book_repository, loan_repository, etc.)"
-echo "   - Type annotation mutations (str | None field defaults)"
+echo "   - Type annotation mutations (str | None / date | None field defaults)"
+echo "   - isbn.py: 'total += value * (i+1)' → 'total -= ...' (ISBN-10 checksum)"
+echo "     Reason: (-x) % 11 == 0 iff x % 11 == 0 — negating the sum is mathematically"
+echo "     equivalent; no test input can distinguish += from -= for valid/invalid ISBNs."
 echo "   These do NOT count against the ≥ 80% target."
 

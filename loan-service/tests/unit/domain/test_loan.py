@@ -155,6 +155,8 @@ class TestLoanStatusTransitions:
         msg = str(exc_info.value)
         assert msg.startswith("Invalid")
         assert "not active" in msg
+        # kill mutant: error text must NOT be wrapped in XX...XX
+        assert "XX" not in msg
         assert not msg.startswith("XX")
 
     def test_active_to_rejected_raises(self) -> None:

@@ -93,47 +93,55 @@ class TestIsbnCreation:
         assert not msg.startswith("XX")
 
     def test_non_numeric_characters_raise_with_message(self) -> None:
-        """Nicht-numerische Zeichen wirfen ValueError mit 'contains invalid characters'
-        und zweiter Zeile 'only digits'."""
+        """Non-numeric characters raise ValueError containing 'contains invalid characters'
+        and the hint text starting with '(only digits'."""
         with pytest.raises(ValueError) as exc_info:
             Isbn("97831614841AB")
         msg = str(exc_info.value)
         assert "contains invalid characters" in msg
         assert "only digits" in msg
+        # kill mutant: error text must NOT be wrapped in XX...XX
         assert not msg.startswith("XX")
+        assert "XX" not in msg
 
     def test_invalid_isbn13_wrong_check_digit_raises_with_message(self) -> None:
-        """ISBN-13 mit falscher Prüfziffer wirft ValueError mit 'invalid check digit'
-        und zweiter Zeile 'expected multiple of 10'."""
+        """ISBN-13 with wrong check digit raises ValueError with exact phrases."""
         with pytest.raises(ValueError) as exc_info:
             Isbn("9783161484101")
         msg = str(exc_info.value)
         assert "invalid check digit" in msg
         assert "expected multiple of 10" in msg
+        # kill mutant: error text must NOT be wrapped in XX...XX
         assert not msg.startswith("XX")
+        assert "XX" not in msg
 
     def test_invalid_isbn10_wrong_check_digit_raises_with_message(self) -> None:
-        """ISBN-10 mit falscher Prüfziffer wirft ValueError mit 'invalid check digit'
-        und zweiter Zeile 'expected multiple of 11'."""
+        """ISBN-10 with wrong check digit raises ValueError with exact phrases."""
         with pytest.raises(ValueError) as exc_info:
             Isbn("0306406153")
         msg = str(exc_info.value)
         assert "invalid check digit" in msg
         assert "expected multiple of 11" in msg
+        # kill mutant: error text must NOT be wrapped in XX...XX
         assert not msg.startswith("XX")
+        assert "XX" not in msg
 
     def test_isbn10_accumulation_is_addition_not_subtraction(self) -> None:
-        """ISBN-10 Prüfsumme wird mit += berechnet (nicht -=).
+        """ISBN-10 checksum uses += not -= (kill += → -= mutant).
 
-        Wenn total -= wäre, würde 0306406152 fälschlich abgelehnt.
+        With subtraction the weighted sum for 0306406152 would be negative and
+        not divisible by 11, so the valid ISBN would be incorrectly rejected.
         """
-        # Gültige ISBN-10 muss akzeptiert werden
+        # Valid ISBN-10 must be accepted – would fail with -= due to negative sum
         isbn = Isbn("0-306-40615-2")
         assert isbn.digits == "0306406152"
-        # Eine falsche Prüfziffer muss abgelehnt werden
+        # A neighbouring check digit must be rejected
         with pytest.raises(ValueError) as exc_info:
             Isbn("0-306-40615-1")
         assert "invalid check digit" in str(exc_info.value)
+        # Second valid ISBN-10 to further constrain the arithmetic direction
+        isbn2 = Isbn("0471958697")
+        assert isbn2.digits == "0471958697"
 
 
 class TestIsbnValueSemantics:

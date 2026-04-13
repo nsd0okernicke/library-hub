@@ -62,5 +62,5 @@ pythonpath = ["src"]
 
 [tool.mutmut]
 paths_to_mutate = "src/loan/domain/,src/loan/application/"
-runner = "python -m pytest tests/unit/ -x -q --no-cov"
 tests_dir = "tests/unit/"
+runner = "python -m pytest tests/unit/ --no-cov -x -q"
