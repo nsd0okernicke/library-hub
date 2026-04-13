@@ -408,3 +408,18 @@ Alle Events werden als JSON über RabbitMQ übertragen. Jedes Event enthält die
 	- Bezahlsystem- Benachrichtigungen per E-Mail/SMS
 	- Frontend (kann später mit React/Vue hinzugefügt werden)
 	- Buch-Cover-Upload oder komplexe Metadaten
+
+## 6. Infrastruktur-Schicht: Integrationstests & Adapter
+
+### Voraussetzungen
+- Domain-, Ports- und Application-Schicht für beide Services sind implementiert und getestet.
+- Mutation Testing für Domain und Application mit Score ≥ 80 % durchgeführt und dokumentiert.
+- Paketstruktur und Schichtenregeln gemäß Konzept umgesetzt.
+- User Stories/technische Stories für Infrastruktur-Schicht sind spezifiziert.
+- Testumgebung für Integrationstests (Testcontainers, Docker, RabbitMQ, PostgreSQL) ist vorbereitet.
+- Alle bisherigen Schritte und Ergebnisse sind dokumentiert.
+
+### ToDo-Checkliste vor Start Schritt 6
+1. Sind alle Schnittstellen (Ports) ausreichend für die Infrastruktur-Adapter spezifiziert?
+2. Gibt es offene technische Abhängigkeiten (z.B. Testcontainer-Konfiguration, Netzwerkzugriffe)?
+3. Müssen weitere User Stories für Infrastruktur/Adapter ergänzt werden?

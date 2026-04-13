@@ -80,9 +80,54 @@ bevor die nächste Schicht begonnen wird.
 | 5 | Application-Schicht: Unit-Tests mit gemockten Ports → Use Cases (beide Services parallel) |
 | 5.5 | Mutation Testing: `domain/` + `application/` beider Services (`mutmut`, Score ≥ 80 %) |
 | 6 | Infrastructure-Schicht: Integrationstests via Testcontainers → SQLAlchemy-Adapter, RabbitMQ-Adapter (beide Services parallel) |
+| 6a | Echte Repository-Implementierungen (SQLAlchemy) in infrastructure/db/ anlegen und mit Use Cases verdrahten |
 | 7 | Infrastructure-Schicht API: API-Tests → FastAPI-Router + Pydantic-Schemas + Mapping (beide Services parallel) |
 | 8 | Event Contract Tests (serviceübergreifend) |
 | 9 | Infrastruktur (Docker Compose, Kubernetes) |
+
+### Schritt 6: Infrastruktur-Schicht (Integrationstests, Adapter)
+
+#### Voraussetzungen
+- Domain-, Ports- und Application-Schicht für beide Services sind implementiert und getestet.
+- Mutation Testing für Domain und Application mit Score ≥ 80 % durchgeführt und dokumentiert.
+- Paketstruktur und Schichtenregeln gemäß Konzept umgesetzt.
+- User Stories/technische Stories für Infrastruktur-Schicht sind spezifiziert.
+- Testumgebung für Integrationstests (Testcontainers, Docker, RabbitMQ, PostgreSQL) ist vorbereitet.
+- Alle bisherigen Schritte und Ergebnisse sind dokumentiert.
+
+#### ToDo-Checkliste vor Start Schritt 6
+1. Sind alle Schnittstellen (Ports) ausreichend für die Infrastruktur-Adapter spezifiziert?
+2. Gibt es offene technische Abhängigkeiten (z.B. Testcontainer-Konfiguration, Netzwerkzugriffe)?
+3. Müssen weitere User Stories für Infrastruktur/Adapter ergänzt werden?
+
+---
+
+## Infrastruktur: Repository-Implementierungen (SQLAlchemy)
+
+- Für jeden Output-Port (z.B. BookRepository, BookStockRepository) wird eine konkrete Implementierung in `infrastructure/db/` angelegt:
+  - `sqlalchemy_book_repository.py`
+  - `sqlalchemy_book_stock_repository.py`
+- Diese Klassen nutzen SQLAlchemy (async) für den Zugriff auf PostgreSQL.
+- Das Mapping Domain ↔ ORM-Model erfolgt ausschließlich in diesen Klassen.
+- Die Dependency Injection im API-Layer wird so gestaltet, dass im Produktivbetrieb die echten Repositories verwendet werden (z.B. via Factory, Settings oder DI-Framework).
+- Für Tests/Entwicklung können weiterhin In-Memory-Fakes verwendet werden.
+
+**Beispielstruktur:**
+
+```
+└── infrastructure/
+    └── db/
+        ├── models.py                  # SQLAlchemy-ORM-Modelle
+        ├── sqlalchemy_book_repository.py
+        ├── sqlalchemy_book_stock_repository.py
+        └── fake_repositories.py       # Nur für Tests/Entwicklung
+```
+
+**Hinweis:**
+- Die Implementierung der echten Repositories ist Voraussetzung für Integrationstests und den produktiven Betrieb.
+- Die Repositories werden in Schritt 6a (nach den Fakes, vor den Integrationstests) implementiert.
+
+---
 
 ### Paketmanagement
 - **Tool:** [`uv`](https://github.com/astral-sh/uv) – moderner, Rust-basierter Ersatz für `pip` + `venv` (10–100× schneller)
