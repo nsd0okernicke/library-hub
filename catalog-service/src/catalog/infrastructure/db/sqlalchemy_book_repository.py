@@ -1,5 +1,5 @@
 """
-SQLAlchemy-Implementierung des BookRepository-Ports.
+SQLAlchemy implementation of the BookRepository port.
 """
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -11,20 +11,20 @@ from .models import BookModel
 
 
 class SqlAlchemyBookRepository(BookRepository):
-    """SQLAlchemy-Adapter für den BookRepository-Port.
+    """SQLAlchemy adapter for the BookRepository port.
 
     Args:
-        session: Aktive SQLAlchemy-AsyncSession.
+        session: Active SQLAlchemy AsyncSession.
     """
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def save(self, book: Book) -> None:
-        """Persistiert ein Book-Objekt als ORM-Model.
+        """Persist a Book object as an ORM model.
 
         Args:
-            book: Das zu speichernde Domain-Objekt.
+            book: The domain object to persist.
         """
         model = BookModel(
             isbn=str(book.isbn),
@@ -37,13 +37,13 @@ class SqlAlchemyBookRepository(BookRepository):
         await self._session.commit()
 
     async def find_by_isbn(self, isbn: Isbn) -> Book | None:
-        """Lädt ein Book-Objekt anhand der ISBN.
+        """Load a Book object by ISBN.
 
         Args:
-            isbn: Die ISBN als Value Object.
+            isbn: The ISBN value object.
 
         Returns:
-            Das gefundene Book-Objekt oder None.
+            The matching Book domain object, or None if not found.
         """
         stmt = select(BookModel).where(BookModel.isbn == str(isbn))
         result = await self._session.execute(stmt)
@@ -59,13 +59,13 @@ class SqlAlchemyBookRepository(BookRepository):
         )
 
     async def exists(self, isbn: Isbn) -> bool:
-        """Prüft, ob ein Buch mit der gegebenen ISBN bereits existiert.
+        """Check whether a book with the given ISBN already exists.
 
         Args:
-            isbn: Die ISBN als Value Object.
+            isbn: The ISBN value object.
 
         Returns:
-            True wenn das Buch existiert, False sonst.
+            True if the book exists, False otherwise.
         """
         stmt = select(BookModel.isbn).where(BookModel.isbn == str(isbn))
         result = await self._session.execute(stmt)
@@ -80,17 +80,17 @@ class SqlAlchemyBookRepository(BookRepository):
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[Sequence[Book], int]:
-        """Gibt eine paginierte, optional gefilterte Liste von Büchern zurück.
+        """Return a paginated, optionally filtered list of books.
 
         Args:
-            title: Optionaler Titelfilter (Substring).
-            author: Optionaler Autorenfilter (Substring).
-            genre: Optionaler Genrefilter (Substring).
-            page: Seitennummer (1-basiert).
-            page_size: Anzahl Elemente pro Seite.
+            title: Optional title filter (substring match).
+            author: Optional author filter (substring match).
+            genre: Optional genre filter (substring match).
+            page: Page number (1-based).
+            page_size: Number of items per page.
 
         Returns:
-            Tupel aus (Bücherliste, Gesamtanzahl).
+            Tuple of (list of Book objects, total count).
         """
         stmt = select(BookModel)
         result = await self._session.execute(stmt)
@@ -106,4 +106,3 @@ class SqlAlchemyBookRepository(BookRepository):
             for m in models
         ]
         return books, len(books)
-

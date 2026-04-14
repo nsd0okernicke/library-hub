@@ -1,6 +1,6 @@
-"""In-Memory-Fake-Repositories für den Loan Service.
+"""In-memory fake repositories for the Loan Service.
 
-Nur für Tests und lokale Entwicklung – kein Produktionseinsatz.
+For tests and local development only – not for production use.
 """
 from __future__ import annotations
 
@@ -17,17 +17,17 @@ from loan.domain.user import User
 
 
 class InMemoryLoanRepository(LoanRepository):
-    """In-Memory-Implementierung des LoanRepository-Ports."""
+    """In-memory implementation of the LoanRepository port."""
 
     def __init__(self) -> None:
         self._store: Dict[uuid.UUID, Loan] = {}
 
     async def save(self, loan: Loan) -> None:
-        """Speichert eine Ausleihe im In-Memory-Store."""
+        """Store a loan in the in-memory store."""
         self._store[loan.id] = loan
 
     async def find_by_id(self, loan_id: uuid.UUID) -> Loan | None:
-        """Gibt eine Ausleihe per ID zurück oder None."""
+        """Return a loan by ID or None if not found."""
         return self._store.get(loan_id)
 
     async def find_by_user_id(
@@ -37,12 +37,12 @@ class InMemoryLoanRepository(LoanRepository):
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[Sequence[Loan], int]:
-        """Gibt alle Ausleihen eines Nutzers zurück."""
+        """Return all loans for a given user."""
         items = [l for l in self._store.values() if l.user_id == user_id]
         return items, len(items)
 
     async def find_overdue(self) -> Sequence[Loan]:
-        """Gibt alle überfälligen aktiven Ausleihen zurück."""
+        """Return all overdue active loans."""
         from loan.domain.loan_status import LoanStatus
         today = date.today()
         return [
@@ -52,38 +52,38 @@ class InMemoryLoanRepository(LoanRepository):
 
 
 class InMemoryUserRepository(UserRepository):
-    """In-Memory-Implementierung des UserRepository-Ports."""
+    """In-memory implementation of the UserRepository port."""
 
     def __init__(self) -> None:
         self._store: Dict[uuid.UUID, User] = {}
         self._emails: Dict[str, uuid.UUID] = {}
 
     async def save(self, user: User) -> None:
-        """Speichert einen Nutzer im In-Memory-Store."""
+        """Store a user in the in-memory store."""
         self._store[user.id] = user
         self._emails[user.email] = user.id
 
     async def find_by_id(self, user_id: uuid.UUID) -> User | None:
-        """Gibt einen Nutzer per ID zurück oder None."""
+        """Return a user by ID or None if not found."""
         return self._store.get(user_id)
 
     async def find_by_email(self, email: str) -> User | None:
-        """Gibt einen Nutzer per E-Mail zurück oder None."""
+        """Return a user by e-mail address or None if not found."""
         uid = self._emails.get(email)
         return self._store.get(uid) if uid else None
 
     async def exists_by_email(self, email: str) -> bool:
-        """Prüft ob eine E-Mail bereits registriert ist."""
+        """Return True if the e-mail address is already registered."""
         return email in self._emails
 
 
 class InMemoryMessagePublisher(MessagePublisher):
-    """In-Memory-Fake für den MessagePublisher-Port."""
+    """In-memory fake implementation of the MessagePublisher port."""
 
     def __init__(self) -> None:
         self.published: list[dict] = []
 
     async def publish(self, routing_key: str, payload: dict) -> None:
-        """Speichert Routing-Key und Payload im In-Memory-Store."""
+        """Store routing key and payload in the in-memory list."""
         self.published.append({"routing_key": routing_key, "payload": payload})
 

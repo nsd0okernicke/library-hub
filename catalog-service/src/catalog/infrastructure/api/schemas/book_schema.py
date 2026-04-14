@@ -8,15 +8,15 @@ from pydantic import BaseModel
 
 
 class BookRequest(BaseModel):
-    """Schema für eingehende Buch-Requests (POST /books).
+    """Schema for incoming book requests (POST /books).
 
     Attributes:
-        isbn: ISBN-Zeichenkette (10 oder 13 Stellen, Bindestriche erlaubt).
-        title: Buchtitel.
-        author: Vollständiger Autorenname.
-        genre: Genre oder Sachgebiet.
-        initial_stock: Anfangsbestand (≥ 0).
-        description: Optionale Freitextbeschreibung.
+        isbn: ISBN string (10 or 13 digits, hyphens allowed).
+        title: Book title.
+        author: Full author name.
+        genre: Genre or subject area.
+        initial_stock: Initial stock count (≥ 0).
+        description: Optional free-text description.
     """
 
     isbn: str
@@ -28,14 +28,14 @@ class BookRequest(BaseModel):
 
 
 class BookResponse(BaseModel):
-    """Schema für ausgehende Buch-Antworten.
+    """Schema for outgoing book responses.
 
     Attributes:
-        isbn: ISBN-Zeichenkette.
-        title: Buchtitel.
-        author: Vollständiger Autorenname.
-        genre: Genre oder Sachgebiet.
-        description: Optionale Freitextbeschreibung.
+        isbn: ISBN string.
+        title: Book title.
+        author: Full author name.
+        genre: Genre or subject area.
+        description: Optional free-text description.
     """
 
     model_config = {"from_attributes": True}
@@ -48,23 +48,22 @@ class BookResponse(BaseModel):
 
 
 class BooksListResponse(BaseModel):
-    """Schema für eine paginierte Liste von Büchern.
+    """Schema for a paginated list of books.
 
     Attributes:
-        items: Liste der Buch-Response-Objekte.
+        items: List of book response objects.
     """
 
     items: list
 
 
 class BookStockResponse(BaseModel):
-    """Schema für Bestandsantworten (GET /availability, POST /return).
+    """Schema for stock responses (GET /availability, POST /return).
 
     Attributes:
-        isbn: ISBN-Zeichenkette.
-        available_count: Aktuell verfügbare Exemplare.
+        isbn: ISBN string.
+        available_count: Currently available copies.
     """
 
     isbn: str
     available_count: int
-

@@ -1,6 +1,6 @@
 """Application Use Case: CheckAvailabilityUseCase (Catalog Service).
 
-Implements CAT-2 – Verfügbarkeit eines Buchs per ISBN prüfen.
+Implements CAT-2 – Check the availability of a book by ISBN.
 """
 
 from __future__ import annotations

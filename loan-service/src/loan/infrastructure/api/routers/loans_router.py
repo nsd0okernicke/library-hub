@@ -1,4 +1,4 @@
-"""Router für alle /loans-Endpunkte des Loan Service."""
+"""Router for all /loans endpoints of the Loan Service."""
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -22,28 +22,28 @@ from loan.infrastructure.api.schemas.loan_schema import (
 router = APIRouter()
 
 
-# ── Dependency-Funktionen ─────────────────────────────────────────────────────
+# ── Dependency functions ──────────────────────────────────────────────────────
 
 def get_loan_repo() -> LoanRepository:
-    """FastAPI-Dependency: liefert ein LoanRepository pro Request.
+    """FastAPI dependency: provides a LoanRepository per request.
 
     Returns:
-        LoanRepository-Implementierung.
+        LoanRepository implementation.
 
     Raises:
-        RuntimeError: Wenn kein Override gesetzt ist (nur in Tests relevant).
+        RuntimeError: If no override has been registered.
     """
     raise RuntimeError("get_loan_repo must be overridden via dependency_overrides")
 
 
 def get_publisher() -> MessagePublisher:
-    """FastAPI-Dependency: liefert einen MessagePublisher pro Request.
+    """FastAPI dependency: provides a MessagePublisher per request.
 
     Returns:
-        MessagePublisher-Implementierung.
+        MessagePublisher implementation.
 
     Raises:
-        RuntimeError: Wenn kein Override gesetzt ist.
+        RuntimeError: If no override has been registered.
     """
     raise RuntimeError("get_publisher must be overridden via dependency_overrides")
 
@@ -55,17 +55,17 @@ async def get_loans(
     user_id: str,
     loan_repo: LoanRepository = Depends(get_loan_repo),
 ) -> LoansListResponse:
-    """Gibt alle Ausleihen eines Nutzers zurück (LOAN-3).
+    """Return all loans for a given user (LOAN-3).
 
     Args:
-        user_id: UUID des Nutzers als String.
-        loan_repo: Repository für Ausleihoperationen.
+        user_id: UUID of the user as a string.
+        loan_repo: Repository for loan operations.
 
     Returns:
-        LoansListResponse mit allen Ausleihen des Nutzers.
+        LoansListResponse containing all loans of the user.
 
     Raises:
-        HTTPException: 422 wenn user_id keine gültige UUID ist.
+        HTTPException: 422 if user_id is not a valid UUID.
     """
     try:
         user_uuid = uuid.UUID(user_id)
@@ -99,15 +99,15 @@ async def create_loan(
     loan_repo: LoanRepository = Depends(get_loan_repo),
     publisher: MessagePublisher = Depends(get_publisher),
 ) -> LoanResponse:
-    """Legt eine neue Ausleih-Anfrage an und gibt sofort 202 zurück (LOAN-1).
+    """Create a new loan request and return 202 immediately (LOAN-1).
 
     Args:
-        payload: Ausleih-Daten aus dem Request-Body.
-        loan_repo: Repository für Ausleihoperationen.
-        publisher: Message-Publisher für Events.
+        payload: Loan data from the request body.
+        loan_repo: Repository for loan operations.
+        publisher: Message publisher for events.
 
     Returns:
-        LoanResponse mit loan_id und status=PENDING.
+        LoanResponse with loan_id and status=PENDING.
     """
     use_case = RequestLoanUseCase(loan_repo, publisher)
     loan = await use_case.execute(isbn=Isbn(payload.isbn), user_id=payload.user_id)
@@ -120,13 +120,13 @@ async def create_loan(
 async def get_overdue_loans(
     loan_repo: LoanRepository = Depends(get_loan_repo),
 ) -> LoansListResponse:
-    """Gibt alle überfälligen Ausleihen zurück (LOAN-5).
+    """Return all overdue loans (LOAN-5).
 
     Args:
-        loan_repo: Repository für Ausleihoperationen.
+        loan_repo: Repository for loan operations.
 
     Returns:
-        LoansListResponse mit allen überfälligen Ausleihen.
+        LoansListResponse containing all overdue loans.
     """
     use_case = ListOverdueLoansUseCase(loan_repo)
     loans = await use_case.execute()
@@ -152,17 +152,17 @@ async def get_loan(
     loan_id: uuid.UUID,
     loan_repo: LoanRepository = Depends(get_loan_repo),
 ) -> LoanDetailResponse:
-    """Gibt eine einzelne Ausleihe per ID zurück (LOAN-2).
+    """Return a single loan by ID (LOAN-2).
 
     Args:
-        loan_id: UUID der Ausleihe.
-        loan_repo: Repository für Ausleihoperationen.
+        loan_id: UUID of the loan.
+        loan_repo: Repository for loan operations.
 
     Returns:
-        LoanDetailResponse mit allen Feldern der Ausleihe.
+        LoanDetailResponse with all loan fields.
 
     Raises:
-        HTTPException: 404 wenn die Ausleihe nicht existiert.
+        HTTPException: 404 if the loan does not exist.
     """
     use_case = GetLoanUseCase(loan_repo)
     try:
@@ -186,19 +186,19 @@ async def activate_loan(
     loan_id: uuid.UUID,
     loan_repo: LoanRepository = Depends(get_loan_repo),
 ) -> LoanDetailResponse:
-    """Aktiviert eine Ausleihe (PENDING → ACTIVE).
+    """Activate a loan (PENDING → ACTIVE).
 
-    Wird intern durch den BookReserved-Event-Consumer aufgerufen.
+    Called internally by the BookReserved event consumer.
 
     Args:
-        loan_id: UUID der Ausleihe.
-        loan_repo: Repository für Ausleihoperationen.
+        loan_id: UUID of the loan.
+        loan_repo: Repository for loan operations.
 
     Returns:
-        LoanDetailResponse mit status=ACTIVE.
+        LoanDetailResponse with status=ACTIVE.
 
     Raises:
-        HTTPException: 404 wenn nicht gefunden, 409 bei ungültigem Übergang.
+        HTTPException: 404 if not found, 409 on invalid status transition.
     """
     use_case = ActivateLoanUseCase(loan_repo)
     try:
@@ -226,18 +226,18 @@ async def return_loan(
     loan_repo: LoanRepository = Depends(get_loan_repo),
     publisher: MessagePublisher = Depends(get_publisher),
 ) -> LoanDetailResponse:
-    """Gibt ein Buch zurück (ACTIVE → RETURNED) und publiziert BookReturned (LOAN-4).
+    """Return a book (ACTIVE → RETURNED) and publish BookReturned (LOAN-4).
 
     Args:
-        loan_id: UUID der Ausleihe.
-        loan_repo: Repository für Ausleihoperationen.
-        publisher: Message-Publisher für Events.
+        loan_id: UUID of the loan.
+        loan_repo: Repository for loan operations.
+        publisher: Message publisher for events.
 
     Returns:
-        LoanDetailResponse mit status=RETURNED.
+        LoanDetailResponse with status=RETURNED.
 
     Raises:
-        HTTPException: 404 wenn nicht gefunden, 409 bei ungültigem Übergang.
+        HTTPException: 404 if not found, 409 on invalid status transition.
     """
     use_case = ReturnLoanUseCase(loan_repo, publisher)
     try:

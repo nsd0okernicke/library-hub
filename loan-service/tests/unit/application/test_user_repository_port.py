@@ -1,7 +1,7 @@
-"""Contract-Tests für den UserRepository-Port (Loan Service).
+"""Contract tests for the UserRepository port (Loan Service).
 
-🔴 RED-Phase: Diese Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Getestete Klasse: loan.ports.user_repository.UserRepository
+🔴 RED phase: These tests must FAIL before any implementation exists.
+Tested class: loan.ports.user_repository.UserRepository
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ _USER = User(name="Alice Müller", email="alice@example.com")
 
 
 class FakeUserRepository(UserRepository):
-    """In-Memory-Implementierung des UserRepository-Ports für Tests."""
+    """In-memory implementation of the UserRepository port for tests."""
 
     def __init__(self) -> None:
         self._store: dict[uuid.UUID, User] = {}
@@ -41,21 +41,21 @@ class FakeUserRepository(UserRepository):
 
 
 class TestUserRepositoryIsAbstract:
-    """Der Port muss ein abstraktes Interface sein."""
+    """The port must be an abstract interface."""
 
     def test_cannot_instantiate_abstract_class(self) -> None:
-        """UserRepository kann nicht direkt instanziiert werden."""
+        """UserRepository cannot be instantiated directly."""
         with pytest.raises(TypeError):
             UserRepository()  # type: ignore[abstract]
 
     def test_fake_can_be_instantiated(self) -> None:
-        """Eine konkrete Implementierung kann instanziiert werden."""
+        """A concrete implementation can be instantiated."""
         repo = FakeUserRepository()
         assert repo is not None
 
 
 class TestUserRepositoryContract:
-    """Vertrag: FakeUserRepository muss alle Port-Methoden korrekt implementieren."""
+    """Contract: FakeUserRepository must implement all port methods correctly."""
 
     @pytest.fixture
     def repo(self) -> FakeUserRepository:
@@ -63,7 +63,7 @@ class TestUserRepositoryContract:
 
     @pytest.mark.asyncio
     async def test_save_and_find_by_id(self, repo: FakeUserRepository) -> None:
-        """save() + find_by_id() – User speichern und abrufen."""
+        """save() + find_by_id() – store and retrieve a user."""
         await repo.save(_USER)
         result = await repo.find_by_id(_USER.id)
         assert result == _USER
@@ -72,13 +72,13 @@ class TestUserRepositoryContract:
     async def test_find_by_id_unknown_returns_none(
         self, repo: FakeUserRepository
     ) -> None:
-        """find_by_id() gibt None zurück für unbekannte ID."""
+        """find_by_id() returns None for an unknown ID."""
         result = await repo.find_by_id(uuid.uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_find_by_email(self, repo: FakeUserRepository) -> None:
-        """find_by_email() gibt User zurück wenn E-Mail bekannt ist."""
+        """find_by_email() returns the user when the e-mail is known."""
         await repo.save(_USER)
         result = await repo.find_by_email("alice@example.com")
         assert result == _USER
@@ -87,18 +87,18 @@ class TestUserRepositoryContract:
     async def test_find_by_email_unknown_returns_none(
         self, repo: FakeUserRepository
     ) -> None:
-        """find_by_email() gibt None zurück wenn E-Mail unbekannt ist."""
+        """find_by_email() returns None when the e-mail is unknown."""
         result = await repo.find_by_email("unknown@example.com")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_exists_by_email_true(self, repo: FakeUserRepository) -> None:
-        """exists_by_email() gibt True wenn E-Mail registriert ist."""
+        """exists_by_email() returns True when the e-mail is registered."""
         await repo.save(_USER)
         assert await repo.exists_by_email("alice@example.com") is True
 
     @pytest.mark.asyncio
     async def test_exists_by_email_false(self, repo: FakeUserRepository) -> None:
-        """exists_by_email() gibt False wenn E-Mail nicht registriert ist."""
+        """exists_by_email() returns False when the e-mail is not registered."""
         assert await repo.exists_by_email("unknown@example.com") is False
 

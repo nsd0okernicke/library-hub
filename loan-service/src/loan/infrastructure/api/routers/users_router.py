@@ -1,4 +1,4 @@
-"""Router für alle /users-Endpunkte des Loan Service."""
+"""Router for all /users endpoints of the Loan Service."""
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from loan.application.register_user_use_case import RegisterUserUseCase
@@ -8,16 +8,16 @@ from loan.infrastructure.api.schemas.user_schema import UserRequest, UserRespons
 router = APIRouter()
 
 
-# ── Dependency-Funktionen ─────────────────────────────────────────────────────
+# ── Dependency functions ──────────────────────────────────────────────────────
 
 def get_user_repo() -> UserRepository:
-    """FastAPI-Dependency: liefert ein UserRepository pro Request.
+    """FastAPI dependency: provides a UserRepository per request.
 
     Returns:
-        UserRepository-Implementierung.
+        UserRepository implementation.
 
     Raises:
-        RuntimeError: Wenn kein Override gesetzt ist.
+        RuntimeError: If no override has been registered.
     """
     raise RuntimeError("get_user_repo must be overridden via dependency_overrides")
 
@@ -29,17 +29,17 @@ async def create_user(
     payload: UserRequest,
     user_repo: UserRepository = Depends(get_user_repo),
 ) -> UserResponse:
-    """Legt einen neuen Nutzer an (LOAN-0).
+    """Create a new user (LOAN-0).
 
     Args:
-        payload: Nutzerdaten aus dem Request-Body.
-        user_repo: Repository für Nutzeroperationen.
+        payload: User data from the request body.
+        user_repo: Repository for user operations.
 
     Returns:
-        UserResponse mit id, name und email.
+        UserResponse with id, name and email.
 
     Raises:
-        HTTPException: 409 Conflict wenn die E-Mail bereits registriert ist.
+        HTTPException: 409 Conflict if the e-mail is already registered.
     """
     use_case = RegisterUserUseCase(user_repo)
     try:
@@ -47,4 +47,3 @@ async def create_user(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
     return UserResponse(id=user.id, name=user.name, email=user.email)
-

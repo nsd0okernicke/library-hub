@@ -1,4 +1,4 @@
-"""Router für alle /books-Endpunkte des Catalog Service."""
+"""Router for all /books-endpoints of Catalog Service."""
 from fastapi import APIRouter, status, HTTPException, Depends
 
 from catalog.application.add_book_use_case import AddBookUseCase
@@ -19,16 +19,16 @@ from catalog.infrastructure.api.schemas.book_schema import (
 router = APIRouter()
 
 
-# ── Dependency-Funktionen ─────────────────────────────────────────────────────
+# ── Dependency functions ──────────────────────────────────────────────────────
 
 def get_book_repo() -> BookRepository:
-    """FastAPI-Dependency: liefert ein BookRepository pro Request.
+    """FastAPI dependency: provides a BookRepository per request.
 
-    Wird via dependency_overrides durch eine konkrete Implementierung ersetzt
-    (Tests: InMemoryBookRepository, Produktion: SqlAlchemyBookRepository).
+    Replaced via dependency_overrides with a concrete implementation
+    (tests: InMemoryBookRepository, production: SqlAlchemyBookRepository).
 
     Raises:
-        RuntimeError: Wenn kein Override gesetzt ist.
+        RuntimeError: If no override has been registered.
     """
     raise RuntimeError(  # pragma: no cover
         "get_book_repo must be overridden via app.dependency_overrides"
@@ -36,10 +36,10 @@ def get_book_repo() -> BookRepository:
 
 
 def get_stock_repo() -> BookStockRepository:
-    """FastAPI-Dependency: liefert ein BookStockRepository pro Request.
+    """FastAPI dependency: provides a BookStockRepository per request.
 
     Raises:
-        RuntimeError: Wenn kein Override gesetzt ist.
+        RuntimeError: If no override has been registered.
     """
     raise RuntimeError(  # pragma: no cover
         "get_stock_repo must be overridden via app.dependency_overrides"
@@ -52,10 +52,10 @@ def get_stock_repo() -> BookStockRepository:
 async def get_books(
     book_repo: BookRepository = Depends(get_book_repo),
 ) -> BooksListResponse:
-    """Gibt alle Bücher aus dem Katalog zurück (CAT-1).
+    """Return all books from the catalogue (CAT-1).
 
     Returns:
-        BooksListResponse mit allen vorhandenen Büchern.
+        BooksListResponse containing all available books.
     """
     use_case = SearchBooksUseCase(book_repo)
     books, _ = await use_case.execute()
@@ -81,18 +81,18 @@ async def create_book(
     book_repo: BookRepository = Depends(get_book_repo),
     stock_repo: BookStockRepository = Depends(get_stock_repo),
 ) -> BookResponse:
-    """Legt ein neues Buch im Katalog an (CAT-3).
+    """Create a new book in the catalogue (CAT-3).
 
     Args:
-        payload: Buchdaten aus dem Request-Body.
-        book_repo: Repository für Buchoperationen.
-        stock_repo: Repository für Bestandsoperationen.
+        payload: Book data from the request body.
+        book_repo: Repository for book operations.
+        stock_repo: Repository for stock operations.
 
     Returns:
-        Das neu angelegte Buch als BookResponse.
+        The newly created book as a BookResponse.
 
     Raises:
-        HTTPException: 409 Conflict, wenn die ISBN bereits existiert.
+        HTTPException: 409 Conflict if the ISBN already exists.
     """
     use_case = AddBookUseCase(book_repo, stock_repo)
     try:
@@ -116,26 +116,26 @@ async def create_book(
 
 
 # ── GET /books/{isbn}/availability ────────────────────────────────────────────
-# WICHTIG: Muss VOR GET /books/{isbn} stehen, damit FastAPI die spezifischere
-# Route korrekt matched (Starlette matched in Definitionsreihenfolge).
+# NOTE: Must be registered BEFORE GET /books/{isbn} so that Starlette matches
+# the more specific route first (routes are matched in definition order).
 
 @router.get("/books/{isbn}/availability", response_model=BookStockResponse)
 async def get_availability(
     isbn: str,
     stock_repo: BookStockRepository = Depends(get_stock_repo),
 ) -> BookStockResponse:
-    """Gibt den aktuellen Bestand eines Buches zurück (CAT-2).
+    """Return the current stock count for a book (CAT-2).
 
     Args:
-        isbn: ISBN-Zeichenkette aus dem URL-Pfad.
-        stock_repo: Repository für Bestandsoperationen.
+        isbn: ISBN string from the URL path.
+        stock_repo: Repository for stock operations.
 
     Returns:
-        BookStockResponse mit isbn und available_count.
+        BookStockResponse with isbn and available_count.
 
     Raises:
-        HTTPException: 404 wenn kein Bestandseintrag gefunden wurde.
-        HTTPException: 422 wenn die ISBN ungültig ist.
+        HTTPException: 404 if no stock entry was found.
+        HTTPException: 422 if the ISBN is invalid.
     """
     try:
         isbn_vo = Isbn(isbn)
@@ -156,18 +156,18 @@ async def return_book(
     isbn: str,
     stock_repo: BookStockRepository = Depends(get_stock_repo),
 ) -> BookStockResponse:
-    """Increases the book stock by 1 (CAT-6).
+    """Increase the book stock by 1 (CAT-6).
 
     Args:
-        isbn: ISBN-Zeichenkette aus dem URL-Pfad.
-        stock_repo: Repository für Bestandsoperationen.
+        isbn: ISBN string from the URL path.
+        stock_repo: Repository for stock operations.
 
     Returns:
-        BookStockResponse mit aktualisiertem available_count.
+        BookStockResponse with the updated available_count.
 
     Raises:
-        HTTPException: 404 wenn kein Bestandseintrag gefunden wurde.
-        HTTPException: 422 wenn die ISBN ungültig ist.
+        HTTPException: 404 if no stock entry was found.
+        HTTPException: 422 if the ISBN is invalid.
     """
     try:
         isbn_vo = Isbn(isbn)
@@ -182,25 +182,25 @@ async def return_book(
 
 
 # ── GET /books/{isbn} ─────────────────────────────────────────────────────────
-# WICHTIG: Muss NACH /books/{isbn}/availability und /books/{isbn}/return stehen.
+# NOTE: Must be registered AFTER /books/{isbn}/availability and /books/{isbn}/return.
 
 @router.get("/books/{isbn}", response_model=BookResponse)
 async def get_book(
     isbn: str,
     book_repo: BookRepository = Depends(get_book_repo),
 ) -> BookResponse:
-    """Gibt ein einzelnes Buch per ISBN zurück (CAT-5).
+    """Return a single book by ISBN (CAT-5).
 
     Args:
-        isbn: ISBN-Zeichenkette aus dem URL-Pfad.
-        book_repo: Repository für Buchoperationen.
+        isbn: ISBN string from the URL path.
+        book_repo: Repository for book operations.
 
     Returns:
-        BookResponse mit allen Metadaten des Buches.
+        BookResponse with all book metadata.
 
     Raises:
-        HTTPException: 404 wenn das Buch nicht gefunden wurde.
-        HTTPException: 422 wenn die ISBN ungültig ist.
+        HTTPException: 404 if the book was not found.
+        HTTPException: 422 if the ISBN is invalid.
     """
     try:
         isbn_vo = Isbn(isbn)

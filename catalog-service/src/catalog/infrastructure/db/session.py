@@ -1,6 +1,4 @@
-"""
-Session- und Engine-Management für SQLAlchemy (async).
-"""
+"""Session and engine management for SQLAlchemy (async)."""
 from collections.abc import AsyncGenerator
 import os
 
@@ -20,11 +18,10 @@ AsyncSessionLocal = async_sessionmaker(engine, expire_on_commit=False, class_=As
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    """FastAPI-Dependency: liefert eine SQLAlchemy-AsyncSession pro Request.
+    """FastAPI dependency: provides a SQLAlchemy AsyncSession per request.
 
     Yields:
-        AsyncSession: Die aktive DB-Session.
+        AsyncSession: The active database session.
     """
     async with AsyncSessionLocal() as session:
         yield session
-

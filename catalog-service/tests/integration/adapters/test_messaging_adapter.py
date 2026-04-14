@@ -1,18 +1,16 @@
-"""
-Integrationstest für den Messaging-Adapter des Catalog Service.
-Testet die Anbindung an RabbitMQ über Testcontainers.
+"""Integration test for the messaging adapter of the Catalog Service.
+Tests the connection to RabbitMQ via Testcontainers.
 
-Test-Status: RED (Adapter noch nicht implementiert)
+Test status: RED (adapter not yet implemented)
 """
 import pytest
 from testcontainers.rabbitmq import RabbitMqContainer
 
 @pytest.mark.asyncio
 async def test_catalog_messaging_adapter_integration():
-    """Testet, ob der Messaging-Adapter mit einer echten RabbitMQ-Instanz funktioniert."""
+    """Tests whether the messaging adapter works with a real RabbitMQ instance."""
     with RabbitMqContainer("rabbitmq:3.13-management") as rabbitmq:
-        # Hier würde der Adapter initialisiert und getestet
-        # Beispiel: Verbindung aufbauen, Event publizieren/empfangen
-        # Aktuell: Test schlägt fehl, da Adapter noch nicht implementiert
-        assert False, "Messaging-Adapter noch nicht implementiert"
-
+        # Adapter would be initialised and tested here.
+        # Example: open connection, publish/consume an event.
+        # Currently: test fails because the adapter is not yet implemented.
+        assert False, "Messaging adapter not yet implemented"

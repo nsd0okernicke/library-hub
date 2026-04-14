@@ -1,7 +1,8 @@
 """
-SQLAlchemy-Implementierung des BookStockRepository-Ports.
+SQLAlchemy implementation of the BookStockRepository port.
 
-Diese Klasse implementiert die Persistenz für BookStock-Objekte mittels SQLAlchemy (async) und übernimmt das Mapping zwischen ORM-Model und Domain-Objekt.
+Handles persistence for BookStock objects using SQLAlchemy (async) and
+maps between ORM models and domain objects.
 """
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -10,20 +11,22 @@ from catalog.domain.isbn import Isbn
 from catalog.domain.ports.book_stock_repository import BookStockRepository
 from .models import BookStockModel
 
+
 class SqlAlchemyBookStockRepository(BookStockRepository):
-    """Repository für BookStock-Objekte mit SQLAlchemy (async).
+    """SQLAlchemy adapter for the BookStockRepository port.
 
     Args:
-        session (AsyncSession): Die SQLAlchemy-Session für DB-Zugriffe.
+        session: Active SQLAlchemy AsyncSession.
     """
-    def __init__(self, session: AsyncSession):
+
+    def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
     async def save(self, stock: BookStock) -> None:
-        """Persistiert ein BookStock-Objekt als ORM-Model.
+        """Persist a BookStock object as an ORM model.
 
         Args:
-            stock (BookStock): Das zu speichernde Domain-Objekt.
+            stock: The domain object to persist.
         """
         model = BookStockModel(
             isbn=str(stock.isbn),
@@ -33,13 +36,13 @@ class SqlAlchemyBookStockRepository(BookStockRepository):
         await self._session.commit()
 
     async def find_by_isbn(self, isbn: Isbn) -> BookStock | None:
-        """Lädt ein BookStock-Objekt anhand der ISBN.
+        """Load a BookStock object by ISBN.
 
         Args:
-            isbn (Isbn): Die ISBN als Value Object.
+            isbn: The ISBN value object.
 
         Returns:
-            BookStock | None: Das gefundene Domain-Objekt oder None.
+            The matching BookStock domain object, or None if not found.
         """
         stmt = select(BookStockModel).where(BookStockModel.isbn == str(isbn))
         result = await self._session.execute(stmt)

@@ -1,7 +1,7 @@
-"""Contract-Tests für den MessagePublisher-Port (Loan Service).
+"""Contract tests for the MessagePublisher port (Loan Service).
 
-🔴 RED-Phase: Diese Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Getestete Klasse: loan.ports.message_publisher.MessagePublisher
+🔴 RED phase: These tests must FAIL before any implementation exists.
+Tested class: loan.ports.message_publisher.MessagePublisher
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from loan.domain.ports.message_publisher import MessagePublisher
 
 
 class FakeMessagePublisher(MessagePublisher):
-    """In-Memory-Implementierung des MessagePublisher-Ports für Tests."""
+    """In-memory implementation of the MessagePublisher port for tests."""
 
     def __init__(self) -> None:
         self.published: list[dict[str, Any]] = []
@@ -24,17 +24,22 @@ class FakeMessagePublisher(MessagePublisher):
 
 
 class TestMessagePublisherIsAbstract:
+    """The port must be an abstract interface."""
+
     def test_cannot_instantiate_abstract_class(self) -> None:
-        """MessagePublisher kann nicht direkt instanziiert werden."""
+        """MessagePublisher cannot be instantiated directly."""
         with pytest.raises(TypeError):
             MessagePublisher()  # type: ignore[abstract]
 
     def test_fake_can_be_instantiated(self) -> None:
+        """A concrete implementation can be instantiated."""
         publisher = FakeMessagePublisher()
         assert publisher is not None
 
 
 class TestMessagePublisherContract:
+    """Contract: publish() must store routing_key and payload."""
+
     @pytest.fixture
     def publisher(self) -> FakeMessagePublisher:
         return FakeMessagePublisher()
@@ -43,7 +48,7 @@ class TestMessagePublisherContract:
     async def test_publish_book_loan_requested(
         self, publisher: FakeMessagePublisher
     ) -> None:
-        """publish() für BookLoanRequested-Event (requirements.md §8)."""
+        """publish() for the BookLoanRequested event (requirements.md §8)."""
         payload = {
             "event_type": "BookLoanRequested",
             "version": "1.0",
@@ -60,7 +65,7 @@ class TestMessagePublisherContract:
 
     @pytest.mark.asyncio
     async def test_publish_book_returned(self, publisher: FakeMessagePublisher) -> None:
-        """publish() für BookReturned-Event (requirements.md §8)."""
+        """publish() for the BookReturned event (requirements.md §8)."""
         payload = {
             "event_type": "BookReturned",
             "version": "1.0",

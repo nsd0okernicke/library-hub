@@ -1,9 +1,9 @@
-"""Unit-Tests für den AddBookUseCase (Catalog Service).
+"""Unit tests for AddBookUseCase (Catalog Service).
 
-🔴 RED-Phase: Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Testet: catalog.application.add_book_use_case.AddBookUseCase
+🔴 RED phase: Tests must FAIL before any implementation exists.
+Tested: catalog.application.add_book_use_case.AddBookUseCase
 
-Use Case: CAT-3 – Buch anlegen (requirements.md §5)
+Use case: CAT-3 – Add a new book (requirements.md §5)
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from catalog.domain.ports.book_stock_repository import BookStockRepository
 _ISBN = Isbn("978-3-16-148410-0")
 
 
-# ── Fakes ────────────────────────────────────────────────────────────────────
+# ── Fakes ─────────────────────────────────────────────────────────────────────
 
 class FakeBookRepository(BookRepository):
     def __init__(self) -> None:
@@ -57,7 +57,7 @@ class FakeBookStockRepository(BookStockRepository):
 # ── Tests ─────────────────────────────────────────────────────────────────────
 
 class TestAddBookUseCase:
-    """CAT-3: Neues Buch mit Metadaten und Anfangsbestand anlegen."""
+    """CAT-3: Add a new book with metadata and initial stock."""
 
     @pytest.fixture
     def use_case(self) -> AddBookUseCase:
@@ -70,7 +70,7 @@ class TestAddBookUseCase:
     async def test_add_book_saves_book_and_stock(
         self, use_case: AddBookUseCase
     ) -> None:
-        """Buch + Stock werden gespeichert."""
+        """Book and stock are persisted."""
         book = await use_case.execute(
             isbn=_ISBN,
             title="Clean Architecture",
@@ -85,7 +85,7 @@ class TestAddBookUseCase:
     async def test_add_book_creates_stock_entry(
         self, use_case: AddBookUseCase
     ) -> None:
-        """initial_stock wird als BookStock gespeichert."""
+        """initial_stock is saved as a BookStock entry."""
         await use_case.execute(
             isbn=_ISBN,
             title="Clean Architecture",
@@ -101,7 +101,7 @@ class TestAddBookUseCase:
     async def test_add_book_with_zero_initial_stock(
         self, use_case: AddBookUseCase
     ) -> None:
-        """initial_stock=0 ist erlaubt."""
+        """initial_stock=0 is allowed."""
         await use_case.execute(
             isbn=_ISBN,
             title="Clean Architecture",
@@ -117,7 +117,7 @@ class TestAddBookUseCase:
     async def test_add_book_duplicate_isbn_raises(
         self, use_case: AddBookUseCase
     ) -> None:
-        """Doppelte ISBN wirft ValueError – Meldung beginnt mit 'Book with ISBN'."""
+        """Duplicate ISBN raises ValueError – message starts with 'Book with ISBN'."""
         await use_case.execute(
             isbn=_ISBN,
             title="Clean Architecture",
@@ -142,7 +142,7 @@ class TestAddBookUseCase:
     async def test_add_book_with_description(
         self, use_case: AddBookUseCase
     ) -> None:
-        """Optionale Beschreibung wird gespeichert."""
+        """Optional description is persisted."""
         book = await use_case.execute(
             isbn=_ISBN,
             title="Clean Architecture",
@@ -152,5 +152,3 @@ class TestAddBookUseCase:
             description="A great book.",
         )
         assert book.description == "A great book."
-
-

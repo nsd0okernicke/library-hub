@@ -1,7 +1,7 @@
-"""conftest.py für API-Tests des Loan Service.
+"""conftest.py for API tests of the Loan Service.
 
-Stellt gemeinsame Fixtures bereit, insbesondere Dependency-Overrides
-mit In-Memory-Fake-Repositories.
+Provides shared fixtures for all API tests, in particular
+dependency overrides with in-memory fake repositories.
 """
 from collections.abc import Generator
 
@@ -22,10 +22,10 @@ from loan.main import app
 
 @pytest.fixture(autouse=True)
 def override_repositories() -> Generator[None, None, None]:
-    """Ersetzt echte Repositories durch In-Memory-Fakes für alle API-Tests.
+    """Replace real repositories with in-memory fakes for all API tests.
 
     Yields:
-        None – räumt Dependency-Overrides nach dem Test auf.
+        None – cleans up dependency overrides after each test.
     """
     loan_repo = InMemoryLoanRepository()
     user_repo = InMemoryUserRepository()

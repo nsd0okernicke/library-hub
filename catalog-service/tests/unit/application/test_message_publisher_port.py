@@ -1,7 +1,7 @@
-"""Contract-Tests für den MessagePublisher-Port (Catalog Service).
+"""Contract tests for the MessagePublisher port (Catalog Service).
 
-🔴 RED-Phase: Diese Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Getestete Klasse: catalog.ports.message_publisher.MessagePublisher
+🔴 RED phase: These tests must FAIL before any implementation exists.
+Tested class: catalog.ports.message_publisher.MessagePublisher
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from catalog.domain.ports.message_publisher import MessagePublisher
 
 
 class FakeMessagePublisher(MessagePublisher):
-    """In-Memory-Implementierung des MessagePublisher-Ports für Tests."""
+    """In-memory fake implementation of the MessagePublisher port for tests."""
 
     def __init__(self) -> None:
         self.published: list[dict[str, Any]] = []
@@ -24,21 +24,21 @@ class FakeMessagePublisher(MessagePublisher):
 
 
 class TestMessagePublisherIsAbstract:
-    """Der Port muss ein abstraktes Interface sein."""
+    """The port must be an abstract interface."""
 
     def test_cannot_instantiate_abstract_class(self) -> None:
-        """MessagePublisher kann nicht direkt instanziiert werden."""
+        """MessagePublisher cannot be instantiated directly."""
         with pytest.raises(TypeError):
             MessagePublisher()  # type: ignore[abstract]
 
     def test_fake_can_be_instantiated(self) -> None:
-        """Eine konkrete Implementierung kann instanziiert werden."""
+        """A concrete implementation can be instantiated."""
         publisher = FakeMessagePublisher()
         assert publisher is not None
 
 
 class TestMessagePublisherContract:
-    """Vertrag: publish() muss routing_key und payload enthalten."""
+    """Contract: publish() must store routing_key and payload."""
 
     @pytest.fixture
     def publisher(self) -> FakeMessagePublisher:
@@ -48,7 +48,7 @@ class TestMessagePublisherContract:
     async def test_publish_stores_message(
         self, publisher: FakeMessagePublisher
     ) -> None:
-        """publish() sendet eine Nachricht mit routing_key und payload."""
+        """publish() stores a message with routing_key and payload."""
         payload = {
             "event_type": "BookReserved",
             "version": "1.0",
@@ -65,7 +65,7 @@ class TestMessagePublisherContract:
     async def test_publish_multiple_messages(
         self, publisher: FakeMessagePublisher
     ) -> None:
-        """Mehrere publish()-Aufrufe erzeugen mehrere Nachrichten."""
+        """Multiple publish() calls produce multiple stored messages."""
         await publisher.publish(
             "book.reserved", {"event_type": "BookReserved", "version": "1.0"}
         )
@@ -74,4 +74,3 @@ class TestMessagePublisherContract:
             {"event_type": "BookOutOfStock", "version": "1.0"},
         )
         assert len(publisher.published) == 2
-

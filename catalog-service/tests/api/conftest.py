@@ -1,7 +1,7 @@
-"""conftest.py für API-Tests des Catalog Service.
+"""conftest.py for API tests of the Catalog Service.
 
-Stellt gemeinsame Fixtures für alle API-Tests bereit,
-insbesondere Dependency-Overrides mit In-Memory-Fake-Repositories.
+Provides shared fixtures for all API tests, in particular
+dependency overrides with in-memory fake repositories.
 """
 from collections.abc import Generator
 
@@ -20,10 +20,10 @@ from catalog.main import app
 
 @pytest.fixture(autouse=True)
 def override_repositories() -> Generator[None, None, None]:
-    """Ersetzt echte DB-Repositories durch In-Memory-Fakes für alle API-Tests.
+    """Replace real DB repositories with in-memory fakes for all API tests.
 
     Yields:
-        None – räumt Dependency-Overrides nach dem Test auf.
+        None – cleans up dependency overrides after each test.
     """
     book_repo = InMemoryBookRepository()
     stock_repo = InMemoryBookStockRepository()
@@ -31,4 +31,3 @@ def override_repositories() -> Generator[None, None, None]:
     app.dependency_overrides[get_stock_repo] = lambda: stock_repo
     yield
     app.dependency_overrides.clear()
-

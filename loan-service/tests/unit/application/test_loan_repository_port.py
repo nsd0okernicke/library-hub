@@ -1,7 +1,7 @@
-"""Contract-Tests für den LoanRepository-Port (Loan Service).
+"""Contract tests for the LoanRepository port (Loan Service).
 
-🔴 RED-Phase: Diese Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Getestete Klasse: loan.ports.loan_repository.LoanRepository
+🔴 RED phase: These tests must FAIL before any implementation exists.
+Tested class: loan.ports.loan_repository.LoanRepository
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ def _make_loan(status: LoanStatus = LoanStatus.PENDING) -> Loan:
 
 
 class FakeLoanRepository(LoanRepository):
-    """In-Memory-Implementierung des LoanRepository-Ports für Tests."""
+    """In-memory implementation of the LoanRepository port for tests."""
 
     def __init__(self) -> None:
         self._store: dict[uuid.UUID, Loan] = {}
@@ -52,35 +52,31 @@ class FakeLoanRepository(LoanRepository):
     async def find_by_user_id(
         self, user_id: uuid.UUID, *, page: int = 1, page_size: int = 20
     ) -> tuple[Sequence[Loan], int]:
-        results = [
-            loan for loan in self._store.values() if loan.user_id == user_id
-        ]
+        results = [loan for loan in self._store.values() if loan.user_id == user_id]
         total = len(results)
         start = (page - 1) * page_size
         return results[start : start + page_size], total
 
     async def find_overdue(self) -> Sequence[Loan]:
-        return [
-            loan for loan in self._store.values() if loan.is_overdue()
-        ]
+        return [loan for loan in self._store.values() if loan.is_overdue()]
 
 
 class TestLoanRepositoryIsAbstract:
-    """Der Port muss ein abstraktes Interface sein."""
+    """The port must be an abstract interface."""
 
     def test_cannot_instantiate_abstract_class(self) -> None:
-        """LoanRepository kann nicht direkt instanziiert werden."""
+        """LoanRepository cannot be instantiated directly."""
         with pytest.raises(TypeError):
             LoanRepository()  # type: ignore[abstract]
 
     def test_fake_can_be_instantiated(self) -> None:
-        """Eine konkrete Implementierung kann instanziiert werden."""
+        """A concrete implementation can be instantiated."""
         repo = FakeLoanRepository()
         assert repo is not None
 
 
 class TestLoanRepositoryContract:
-    """Vertrag: FakeLoanRepository muss alle Port-Methoden korrekt implementieren."""
+    """Contract: FakeLoanRepository must implement all port methods correctly."""
 
     @pytest.fixture
     def repo(self) -> FakeLoanRepository:
@@ -88,7 +84,7 @@ class TestLoanRepositoryContract:
 
     @pytest.mark.asyncio
     async def test_save_and_find_by_id(self, repo: FakeLoanRepository) -> None:
-        """save() + find_by_id() – Loan speichern und abrufen."""
+        """save() + find_by_id() – store and retrieve a loan."""
         loan = _make_loan()
         await repo.save(loan)
         result = await repo.find_by_id(loan.id)
@@ -98,13 +94,13 @@ class TestLoanRepositoryContract:
     async def test_find_by_id_unknown_returns_none(
         self, repo: FakeLoanRepository
     ) -> None:
-        """find_by_id() gibt None zurück für unbekannte ID."""
+        """find_by_id() returns None for an unknown ID."""
         result = await repo.find_by_id(uuid.uuid4())
         assert result is None
 
     @pytest.mark.asyncio
     async def test_find_by_user_id(self, repo: FakeLoanRepository) -> None:
-        """find_by_user_id() gibt alle Loans eines Nutzers zurück."""
+        """find_by_user_id() returns all loans belonging to a user."""
         loan1 = _make_loan()
         loan2 = _make_loan()
         other_loan = Loan(
@@ -120,7 +116,7 @@ class TestLoanRepositoryContract:
 
     @pytest.mark.asyncio
     async def test_find_by_user_id_empty(self, repo: FakeLoanRepository) -> None:
-        """find_by_user_id() gibt leere Liste zurück wenn keine Loans existieren."""
+        """find_by_user_id() returns an empty list when no loans exist."""
         loans, total = await repo.find_by_user_id(uuid.uuid4())
         assert total == 0
         assert list(loans) == []
@@ -129,7 +125,7 @@ class TestLoanRepositoryContract:
     async def test_find_overdue_returns_active_past_due(
         self, repo: FakeLoanRepository
     ) -> None:
-        """find_overdue() gibt nur ACTIVE Loans zurück deren due_date vergangen."""
+        """find_overdue() returns only ACTIVE loans whose due_date has passed."""
         overdue = Loan(
             user_id=_USER_ID,
             isbn=_ISBN,
@@ -145,7 +141,7 @@ class TestLoanRepositoryContract:
 
     @pytest.mark.asyncio
     async def test_save_updates_existing_loan(self, repo: FakeLoanRepository) -> None:
-        """save() überschreibt einen vorhandenen Loan (z. B. nach Statuswechsel)."""
+        """save() overwrites an existing loan (e.g. after a status transition)."""
         loan = _make_loan()
         await repo.save(loan)
         loan.activate()

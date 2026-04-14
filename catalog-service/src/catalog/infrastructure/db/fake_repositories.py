@@ -1,6 +1,6 @@
-"""
-Einfache In-Memory-Fake-Repositories für BookRepository und BookStockRepository.
-Nur für Entwicklungs- und Testzwecke!
+"""In-memory fake repositories for BookRepository and BookStockRepository.
+
+For development and testing only – not for production use.
 """
 from collections.abc import Sequence
 from typing import Dict
@@ -12,7 +12,7 @@ from catalog.domain.ports.book_stock_repository import BookStockRepository
 
 
 class InMemoryBookRepository(BookRepository):
-    """In-Memory-Fake-Implementierung des BookRepository-Ports."""
+    """In-memory fake implementation of the BookRepository port."""
 
     def __init__(self) -> None:
         self._books: Dict[str, Book] = {}
@@ -40,7 +40,7 @@ class InMemoryBookRepository(BookRepository):
 
 
 class InMemoryBookStockRepository(BookStockRepository):
-    """In-Memory-Fake-Implementierung des BookStockRepository-Ports."""
+    """In-memory fake implementation of the BookStockRepository port."""
 
     def __init__(self) -> None:
         self._stocks: Dict[str, BookStock] = {}
@@ -50,4 +50,3 @@ class InMemoryBookStockRepository(BookStockRepository):
 
     async def find_by_isbn(self, isbn: Isbn) -> BookStock | None:
         return self._stocks.get(str(isbn))
-

@@ -1,7 +1,7 @@
-"""Unit-Tests für SearchBooksUseCase, GetBookUseCase, CheckAvailabilityUseCase
+"""Unit tests for SearchBooksUseCase, GetBookUseCase, CheckAvailabilityUseCase
 (Catalog Service).
 
-🔴 RED-Phase: Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
+🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested:
   catalog.application.search_books_use_case.SearchBooksUseCase  (CAT-1)
   catalog.application.get_book_use_case.GetBookUseCase           (CAT-5)
@@ -78,7 +78,7 @@ class FakeBookStockRepository(BookStockRepository):
 # ── SearchBooksUseCase ────────────────────────────────────────────────────────
 
 class TestSearchBooksUseCase:
-    """CAT-1: Bücher suchen, filtern und paginieren."""
+    """CAT-1: Search, filter and paginate books."""
 
     @pytest.fixture
     def use_case(self) -> SearchBooksUseCase:
@@ -90,7 +90,7 @@ class TestSearchBooksUseCase:
     async def test_search_returns_all_books(
         self, use_case: SearchBooksUseCase
     ) -> None:
-        """Ohne Filter werden alle Bücher zurückgegeben."""
+        """Without filters all books are returned."""
         books, total = await use_case.execute()
         assert total == 2
 
@@ -98,7 +98,7 @@ class TestSearchBooksUseCase:
     async def test_search_filter_by_title(
         self, use_case: SearchBooksUseCase
     ) -> None:
-        """Titelfilter (case-insensitive)."""
+        """Title filter (case-insensitive)."""
         books, total = await use_case.execute(title="clean")
         assert total == 1
         assert list(books)[0] == _BOOK_A
@@ -107,7 +107,7 @@ class TestSearchBooksUseCase:
     async def test_search_filter_by_author(
         self, use_case: SearchBooksUseCase
     ) -> None:
-        """Autorenfilter."""
+        """Author filter."""
         books, total = await use_case.execute(author="martin")
         assert total == 1
 
@@ -115,7 +115,7 @@ class TestSearchBooksUseCase:
     async def test_search_empty_result(
         self, use_case: SearchBooksUseCase
     ) -> None:
-        """Kein Treffer liefert leere Liste, kein Fehler."""
+        """No match returns an empty list without raising an error."""
         books, total = await use_case.execute(title="nonexistent")
         assert total == 0
         assert list(books) == []
@@ -124,7 +124,7 @@ class TestSearchBooksUseCase:
     async def test_search_pagination(
         self, use_case: SearchBooksUseCase
     ) -> None:
-        """Pagination: page_size=1 liefert 1 Element, total=2."""
+        """Pagination: page_size=1 returns 1 item, total=2."""
         books, total = await use_case.execute(page=1, page_size=1)
         assert total == 2
         assert len(list(books)) == 1
@@ -133,7 +133,7 @@ class TestSearchBooksUseCase:
 # ── GetBookUseCase ────────────────────────────────────────────────────────────
 
 class TestGetBookUseCase:
-    """CAT-5: Einzelnes Buch per ISBN abrufen."""
+    """CAT-5: Retrieve a single book by ISBN."""
 
     @pytest.fixture
     def use_case(self) -> GetBookUseCase:
@@ -143,7 +143,7 @@ class TestGetBookUseCase:
 
     @pytest.mark.asyncio
     async def test_get_existing_book(self, use_case: GetBookUseCase) -> None:
-        """Bekannte ISBN liefert das Buch."""
+        """Known ISBN returns the book."""
         book = await use_case.execute(_ISBN_A)
         assert book == _BOOK_A
 
@@ -151,7 +151,7 @@ class TestGetBookUseCase:
     async def test_get_unknown_book_raises(
         self, use_case: GetBookUseCase
     ) -> None:
-        """Unbekannte ISBN wirft ValueError (→ HTTP 404)."""
+        """Unknown ISBN raises ValueError (→ HTTP 404)."""
         with pytest.raises(ValueError, match="[Nn]ot found|[Nn]o book"):
             await use_case.execute(_ISBN_B)
 
@@ -159,7 +159,7 @@ class TestGetBookUseCase:
 # ── CheckAvailabilityUseCase ──────────────────────────────────────────────────
 
 class TestCheckAvailabilityUseCase:
-    """CAT-2: Verfügbarkeit eines Buchs prüfen."""
+    """CAT-2: Check the availability of a book."""
 
     @pytest.fixture
     def use_case(self) -> CheckAvailabilityUseCase:
@@ -172,7 +172,7 @@ class TestCheckAvailabilityUseCase:
     async def test_check_known_isbn(
         self, use_case: CheckAvailabilityUseCase
     ) -> None:
-        """Bekannte ISBN liefert available_count."""
+        """Known ISBN returns available_count."""
         count = await use_case.execute(_ISBN_A)
         assert count == 3
 
@@ -180,7 +180,6 @@ class TestCheckAvailabilityUseCase:
     async def test_check_unknown_isbn_raises(
         self, use_case: CheckAvailabilityUseCase
     ) -> None:
-        """Unbekannte ISBN wirft ValueError (→ HTTP 404)."""
+        """Unknown ISBN raises ValueError (→ HTTP 404)."""
         with pytest.raises(ValueError, match="[Nn]ot found|[Nn]o stock"):
             await use_case.execute(_ISBN_B)
-

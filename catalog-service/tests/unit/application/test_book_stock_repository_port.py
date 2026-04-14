@@ -1,7 +1,7 @@
-"""Contract-Tests für den BookStockRepository-Port (Catalog Service).
+"""Contract tests for the BookStockRepository port (Catalog Service).
 
-🔴 RED-Phase: Diese Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
-Getestete Klasse: catalog.ports.book_stock_repository.BookStockRepository
+🔴 RED phase: These tests must FAIL before any implementation exists.
+Tested class: catalog.ports.book_stock_repository.BookStockRepository
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ _ISBN_B = Isbn("978-0-13-468599-1")
 
 
 class FakeBookStockRepository(BookStockRepository):
-    """In-Memory-Implementierung des BookStockRepository-Ports für Tests."""
+    """In-memory fake implementation of the BookStockRepository port for tests."""
 
     def __init__(self) -> None:
         self._store: dict[str, BookStock] = {}
@@ -30,21 +30,21 @@ class FakeBookStockRepository(BookStockRepository):
 
 
 class TestBookStockRepositoryIsAbstract:
-    """Der Port muss ein abstraktes Interface sein."""
+    """The port must be an abstract interface."""
 
     def test_cannot_instantiate_abstract_class(self) -> None:
-        """BookStockRepository kann nicht direkt instanziiert werden."""
+        """BookStockRepository cannot be instantiated directly."""
         with pytest.raises(TypeError):
             BookStockRepository()  # type: ignore[abstract]
 
     def test_fake_can_be_instantiated(self) -> None:
-        """Eine konkrete Implementierung kann instanziiert werden."""
+        """A concrete implementation can be instantiated."""
         repo = FakeBookStockRepository()
         assert repo is not None
 
 
 class TestBookStockRepositoryContract:
-    """Vertrag: FakeBookStockRepository – alle Port-Methoden korrekt."""
+    """Contract: FakeBookStockRepository must implement all port methods correctly."""
 
     @pytest.fixture
     def repo(self) -> FakeBookStockRepository:
@@ -52,7 +52,7 @@ class TestBookStockRepositoryContract:
 
     @pytest.mark.asyncio
     async def test_save_and_find_by_isbn(self, repo: FakeBookStockRepository) -> None:
-        """save() + find_by_isbn() – Stock speichern und abrufen."""
+        """save() + find_by_isbn() – store and retrieve a stock entry."""
         stock = BookStock(isbn=_ISBN, available_count=3)
         await repo.save(stock)
         result = await repo.find_by_isbn(_ISBN)
@@ -63,7 +63,7 @@ class TestBookStockRepositoryContract:
     async def test_find_by_isbn_unknown_returns_none(
         self, repo: FakeBookStockRepository
     ) -> None:
-        """find_by_isbn() gibt None zurück für unbekannte ISBN."""
+        """find_by_isbn() returns None for an unknown ISBN."""
         result = await repo.find_by_isbn(_ISBN)
         assert result is None
 
@@ -71,7 +71,7 @@ class TestBookStockRepositoryContract:
     async def test_save_updates_existing_stock(
         self, repo: FakeBookStockRepository
     ) -> None:
-        """save() überschreibt einen vorhandenen Eintrag."""
+        """save() overwrites an existing entry."""
         stock = BookStock(isbn=_ISBN, available_count=3)
         await repo.save(stock)
         stock.reserve()
@@ -79,4 +79,3 @@ class TestBookStockRepositoryContract:
         result = await repo.find_by_isbn(_ISBN)
         assert result is not None
         assert result.available_count == 2
-

@@ -1,10 +1,10 @@
-"""Unit-Tests für RequestLoanUseCase (Loan Service).
+"""Unit tests for RequestLoanUseCase (Loan Service).
 
-🔴 RED-Phase: Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
+🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested: loan.application.request_loan_use_case.RequestLoanUseCase (LOAN-1)
 
-Flow: POST /loans → Loan(PENDING) anlegen → BookLoanRequested publizieren.
-due_date = heute + LOAN_DURATION_DAYS (konfigurierbar, Standard 28).
+Flow: POST /loans → create Loan(PENDING) → publish BookLoanRequested.
+due_date = today + LOAN_DURATION_DAYS (configurable, default 28).
 """
 
 from __future__ import annotations
@@ -60,7 +60,7 @@ class FakeMessagePublisher(MessagePublisher):
 
 
 class TestRequestLoanUseCase:
-    """LOAN-1: Buch ausleihen."""
+    """LOAN-1: Request a book loan."""
 
     @pytest.fixture
     def publisher(self) -> FakeMessagePublisher:
@@ -78,7 +78,7 @@ class TestRequestLoanUseCase:
     async def test_request_loan_returns_pending_loan(
         self, use_case: RequestLoanUseCase
     ) -> None:
-        """Neuer Loan hat Status PENDING."""
+        """New loan has status PENDING."""
         loan = await use_case.execute(isbn=_ISBN, user_id=_USER_ID)
         assert loan.status == LoanStatus.PENDING
         assert loan.isbn == _ISBN
@@ -88,7 +88,7 @@ class TestRequestLoanUseCase:
     async def test_request_loan_sets_due_date(
         self, use_case: RequestLoanUseCase
     ) -> None:
-        """due_date = heute + 28 Tage."""
+        """due_date = today + 28 days."""
         loan = await use_case.execute(isbn=_ISBN, user_id=_USER_ID)
         assert loan.due_date == date.today() + timedelta(days=28)
 
@@ -96,7 +96,7 @@ class TestRequestLoanUseCase:
     async def test_request_loan_respects_custom_duration(
         self, publisher: FakeMessagePublisher
     ) -> None:
-        """loan_duration_days ist konfigurierbar."""
+        """loan_duration_days is configurable."""
         use_case = RequestLoanUseCase(
             loan_repo=FakeLoanRepository(),
             publisher=publisher,
@@ -109,7 +109,7 @@ class TestRequestLoanUseCase:
     async def test_request_loan_publishes_book_loan_requested(
         self, use_case: RequestLoanUseCase, publisher: FakeMessagePublisher
     ) -> None:
-        """BookLoanRequested-Event wird publiziert (requirements.md §8)."""
+        """BookLoanRequested event is published (requirements.md §8)."""
         loan = await use_case.execute(isbn=_ISBN, user_id=_USER_ID)
         assert len(publisher.published) == 1
         msg = publisher.published[0]
@@ -125,9 +125,8 @@ class TestRequestLoanUseCase:
     async def test_request_loan_persists_loan(
         self, use_case: RequestLoanUseCase
     ) -> None:
-        """Loan wird im Repository gespeichert."""
+        """Loan is persisted in the repository."""
         loan = await use_case.execute(isbn=_ISBN, user_id=_USER_ID)
         found = await use_case._loan_repo.find_by_id(loan.id)
         assert found == loan
-
 

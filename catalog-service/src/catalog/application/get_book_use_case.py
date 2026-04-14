@@ -1,6 +1,6 @@
 """Application Use Case: GetBookUseCase (Catalog Service).
 
-Implements CAT-5 – Einzelnes Buch per ISBN abrufen.
+Implements CAT-5 – Retrieve a single book by ISBN.
 """
 
 from __future__ import annotations

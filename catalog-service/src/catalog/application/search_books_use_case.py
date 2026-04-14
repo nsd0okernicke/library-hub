@@ -1,6 +1,6 @@
 """Application Use Case: SearchBooksUseCase (Catalog Service).
 
-Implements CAT-1 – Bücher suchen, filtern und paginieren.
+Implements CAT-1 – Search, filter and paginate books.
 """
 
 from __future__ import annotations

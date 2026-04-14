@@ -134,7 +134,7 @@ class TestReturnBookUseCase:
 
     @pytest.mark.asyncio
     async def test_return_unknown_isbn_raises(self) -> None:
-        """Unbekannte ISBN wirft ValueError (→ HTTP 404)."""
+        """Unknown ISBN raises ValueError (→ HTTP 404)."""
         use_case = self._make_use_case(available=1)
         unknown = Isbn("978-0-13-468599-1")
         with pytest.raises(ValueError, match="[Nn]ot found|[Nn]o stock"):

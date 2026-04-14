@@ -1,6 +1,6 @@
 """Application Use Case: AddBookUseCase (Catalog Service).
 
-Implements CAT-3 – Neues Buch mit Metadaten und Anfangsbestand anlegen.
+Implements CAT-3 – Add a new book with metadata and initial stock.
 """
 
 from __future__ import annotations

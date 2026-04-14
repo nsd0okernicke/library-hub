@@ -1,6 +1,6 @@
-"""Unit-Tests für RegisterUserUseCase (Loan Service).
+"""Unit tests for RegisterUserUseCase (Loan Service).
 
-🔴 RED-Phase: Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
+🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested: loan.application.register_user_use_case.RegisterUserUseCase (LOAN-0)
 """
 
@@ -36,7 +36,7 @@ class FakeUserRepository(UserRepository):
 
 
 class TestRegisterUserUseCase:
-    """LOAN-0: Nutzer registrieren."""
+    """LOAN-0: Register a new user."""
 
     @pytest.fixture
     def use_case(self) -> RegisterUserUseCase:
@@ -46,7 +46,7 @@ class TestRegisterUserUseCase:
     async def test_register_new_user_returns_user(
         self, use_case: RegisterUserUseCase
     ) -> None:
-        """Neuer Nutzer wird gespeichert und zurückgegeben."""
+        """New user is persisted and returned."""
         user = await use_case.execute(name="Alice Müller", email="alice@example.com")
         assert user.name == "Alice Müller"
         assert user.email == "alice@example.com"
@@ -56,7 +56,7 @@ class TestRegisterUserUseCase:
     async def test_register_duplicate_email_raises(
         self, use_case: RegisterUserUseCase
     ) -> None:
-        """Doppelte E-Mail wirft ValueError (→ HTTP 409)."""
+        """Duplicate e-mail raises ValueError (→ HTTP 409)."""
         await use_case.execute(name="Alice", email="alice@example.com")
         with pytest.raises(ValueError, match="[Aa]lready exists|[Dd]uplicate|email"):
             await use_case.execute(name="Alice 2", email="alice@example.com")
@@ -65,7 +65,7 @@ class TestRegisterUserUseCase:
     async def test_register_persists_user(
         self, use_case: RegisterUserUseCase
     ) -> None:
-        """Gespeicherter Nutzer ist über Repository findbar."""
+        """Persisted user can be retrieved via the repository."""
         user = await use_case.execute(name="Bob", email="bob@example.com")
         found = await use_case._user_repo.find_by_id(user.id)
         assert found == user

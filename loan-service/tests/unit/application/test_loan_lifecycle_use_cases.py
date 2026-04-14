@@ -1,10 +1,10 @@
-"""Unit-Tests für Loan-Lifecycle Use Cases (Loan Service).
+"""Unit tests for loan lifecycle use cases (Loan Service).
 
-🔴 RED-Phase: Tests müssen FEHLSCHLAGEN, bevor die Implementierung beginnt.
+🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested:
   loan.application.activate_loan_use_case.ActivateLoanUseCase   (PENDING→ACTIVE)
   loan.application.reject_loan_use_case.RejectLoanUseCase        (PENDING→REJECTED)
-  loan.application.return_loan_use_case.ReturnLoanUseCase   (ACTIVE→RETURNED, LOAN-4)
+  loan.application.return_loan_use_case.ReturnLoanUseCase        (ACTIVE→RETURNED, LOAN-4)
   loan.application.get_loan_use_case.GetLoanUseCase              (LOAN-2)
   loan.application.list_loans_use_case.ListLoansUseCase          (LOAN-3)
   loan.application.list_overdue_loans_use_case.ListOverdueLoansUseCase (LOAN-5)
@@ -52,17 +52,13 @@ class FakeLoanRepository(LoanRepository):
     async def find_by_user_id(
         self, user_id: uuid.UUID, *, page: int = 1, page_size: int = 20
     ) -> tuple[Sequence[Loan], int]:
-        results = [
-            loan for loan in self._store.values() if loan.user_id == user_id
-        ]
+        results = [loan for loan in self._store.values() if loan.user_id == user_id]
         total = len(results)
         start = (page - 1) * page_size
         return results[start : start + page_size], total
 
     async def find_overdue(self) -> Sequence[Loan]:
-        return [
-            loan for loan in self._store.values() if loan.is_overdue()
-        ]
+        return [loan for loan in self._store.values() if loan.is_overdue()]
 
 
 class FakeMessagePublisher(MessagePublisher):
@@ -100,11 +96,11 @@ def _overdue_loan() -> Loan:
 # ── ActivateLoanUseCase ───────────────────────────────────────────────────────
 
 class TestActivateLoanUseCase:
-    """PENDING → ACTIVE nach BookReserved-Event."""
+    """PENDING → ACTIVE after BookReserved event."""
 
     @pytest.mark.asyncio
     async def test_activate_pending_loan(self) -> None:
-        """Loan wechselt von PENDING zu ACTIVE."""
+        """Loan transitions from PENDING to ACTIVE."""
         loan = _pending_loan()
         repo = FakeLoanRepository(loans=[loan])
         use_case = ActivateLoanUseCase(loan_repo=repo)
@@ -113,14 +109,14 @@ class TestActivateLoanUseCase:
 
     @pytest.mark.asyncio
     async def test_activate_unknown_loan_raises(self) -> None:
-        """Unbekannte loan_id wirft ValueError."""
+        """Unknown loan_id raises ValueError."""
         use_case = ActivateLoanUseCase(loan_repo=FakeLoanRepository())
         with pytest.raises(ValueError, match="[Nn]ot found"):
             await use_case.execute(loan_id=uuid.uuid4())
 
     @pytest.mark.asyncio
     async def test_activate_non_pending_loan_raises(self) -> None:
-        """Bereits aktiver Loan kann nicht erneut aktiviert werden."""
+        """An already active loan cannot be activated again."""
         loan = _active_loan()
         use_case = ActivateLoanUseCase(loan_repo=FakeLoanRepository(loans=[loan]))
         with pytest.raises(ValueError):
@@ -130,21 +126,19 @@ class TestActivateLoanUseCase:
 # ── RejectLoanUseCase ─────────────────────────────────────────────────────────
 
 class TestRejectLoanUseCase:
-    """PENDING → REJECTED nach BookOutOfStock-Event."""
+    """PENDING → REJECTED after BookOutOfStock event."""
 
     @pytest.mark.asyncio
     async def test_reject_pending_loan(self) -> None:
-        """Loan wechselt von PENDING zu REJECTED."""
+        """Loan transitions from PENDING to REJECTED."""
         loan = _pending_loan()
-        use_case = RejectLoanUseCase(
-            loan_repo=FakeLoanRepository(loans=[loan])
-        )
+        use_case = RejectLoanUseCase(loan_repo=FakeLoanRepository(loans=[loan]))
         rejected = await use_case.execute(loan_id=loan.id)
         assert rejected.status == LoanStatus.REJECTED
 
     @pytest.mark.asyncio
     async def test_reject_unknown_loan_raises(self) -> None:
-        """Unbekannte loan_id wirft ValueError."""
+        """Unknown loan_id raises ValueError."""
         use_case = RejectLoanUseCase(loan_repo=FakeLoanRepository())
         with pytest.raises(ValueError, match="[Nn]ot found"):
             await use_case.execute(loan_id=uuid.uuid4())
@@ -153,7 +147,7 @@ class TestRejectLoanUseCase:
 # ── ReturnLoanUseCase ─────────────────────────────────────────────────────────
 
 class TestReturnLoanUseCase:
-    """LOAN-4: Buch zurückgeben – ACTIVE → RETURNED + BookReturned publizieren."""
+    """LOAN-4: Return a book – ACTIVE → RETURNED + publish BookReturned."""
 
     def _make_use_case(
         self, loan: Loan
@@ -175,7 +169,7 @@ class TestReturnLoanUseCase:
 
     @pytest.mark.asyncio
     async def test_return_publishes_book_returned_event(self) -> None:
-        """BookReturned-Event wird publiziert (requirements.md §8)."""
+        """BookReturned event is published (requirements.md §8)."""
         loan = _active_loan()
         use_case, publisher = self._make_use_case(loan)
         await use_case.execute(loan_id=loan.id)
@@ -190,7 +184,7 @@ class TestReturnLoanUseCase:
 
     @pytest.mark.asyncio
     async def test_return_already_returned_raises(self) -> None:
-        """Bereits zurückgegebener Loan wirft ValueError (→ HTTP 409)."""
+        """Returning an already returned loan raises ValueError (→ HTTP 409)."""
         loan = _active_loan()
         use_case, _ = self._make_use_case(loan)
         await use_case.execute(loan_id=loan.id)
@@ -199,7 +193,7 @@ class TestReturnLoanUseCase:
 
     @pytest.mark.asyncio
     async def test_return_unknown_loan_raises(self) -> None:
-        """Unbekannte loan_id wirft ValueError (→ HTTP 404)."""
+        """Unknown loan_id raises ValueError (→ HTTP 404)."""
         publisher = FakeMessagePublisher()
         use_case = ReturnLoanUseCase(
             loan_repo=FakeLoanRepository(),
@@ -212,11 +206,11 @@ class TestReturnLoanUseCase:
 # ── GetLoanUseCase ────────────────────────────────────────────────────────────
 
 class TestGetLoanUseCase:
-    """LOAN-2: Einzelne Ausleihe abrufen."""
+    """LOAN-2: Retrieve a single loan."""
 
     @pytest.mark.asyncio
     async def test_get_existing_loan(self) -> None:
-        """Bekannte loan_id gibt den Loan zurück."""
+        """Known loan_id returns the loan."""
         loan = _pending_loan()
         use_case = GetLoanUseCase(loan_repo=FakeLoanRepository(loans=[loan]))
         result = await use_case.execute(loan_id=loan.id)
@@ -224,7 +218,7 @@ class TestGetLoanUseCase:
 
     @pytest.mark.asyncio
     async def test_get_unknown_loan_raises(self) -> None:
-        """Unbekannte loan_id wirft ValueError (→ HTTP 404)."""
+        """Unknown loan_id raises ValueError (→ HTTP 404)."""
         use_case = GetLoanUseCase(loan_repo=FakeLoanRepository())
         with pytest.raises(ValueError, match="[Nn]ot found"):
             await use_case.execute(loan_id=uuid.uuid4())
@@ -233,11 +227,11 @@ class TestGetLoanUseCase:
 # ── ListLoansUseCase ──────────────────────────────────────────────────────────
 
 class TestListLoansUseCase:
-    """LOAN-3: Alle Ausleihen eines Nutzers anzeigen."""
+    """LOAN-3: List all loans for a user."""
 
     @pytest.mark.asyncio
     async def test_list_loans_for_user(self) -> None:
-        """Gibt alle Loans eines Nutzers zurück."""
+        """Returns all loans belonging to the given user."""
         loan1 = _pending_loan()
         loan2 = _active_loan()
         other = Loan(
@@ -252,7 +246,7 @@ class TestListLoansUseCase:
 
     @pytest.mark.asyncio
     async def test_list_loans_empty(self) -> None:
-        """Keine Loans → leere Liste, kein Fehler."""
+        """No loans → empty list, no error raised."""
         use_case = ListLoansUseCase(loan_repo=FakeLoanRepository())
         loans, total = await use_case.execute(user_id=uuid.uuid4())
         assert total == 0
@@ -260,14 +254,10 @@ class TestListLoansUseCase:
 
     @pytest.mark.asyncio
     async def test_list_loans_pagination(self) -> None:
-        """Pagination funktioniert korrekt."""
+        """Pagination works correctly."""
         loans = [_pending_loan(), _pending_loan(), _pending_loan()]
-        use_case = ListLoansUseCase(
-            loan_repo=FakeLoanRepository(loans=loans)
-        )
-        result, total = await use_case.execute(
-            user_id=_USER_ID, page=1, page_size=2
-        )
+        use_case = ListLoansUseCase(loan_repo=FakeLoanRepository(loans=loans))
+        result, total = await use_case.execute(user_id=_USER_ID, page=1, page_size=2)
         assert total == 3
         assert len(list(result)) == 2
 
@@ -275,11 +265,11 @@ class TestListLoansUseCase:
 # ── ListOverdueLoansUseCase ───────────────────────────────────────────────────
 
 class TestListOverdueLoansUseCase:
-    """LOAN-5: Überfällige Ausleihen einsehen."""
+    """LOAN-5: List overdue loans."""
 
     @pytest.mark.asyncio
     async def test_list_overdue_returns_only_overdue(self) -> None:
-        """Nur ACTIVE Loans mit due_date < heute werden zurückgegeben."""
+        """Only ACTIVE loans with due_date < today are returned."""
         overdue = _overdue_loan()
         active = _active_loan()
         pending = _pending_loan()
@@ -293,7 +283,7 @@ class TestListOverdueLoansUseCase:
 
     @pytest.mark.asyncio
     async def test_list_overdue_empty(self) -> None:
-        """Keine überfälligen Loans → leere Liste."""
+        """No overdue loans → empty list."""
         use_case = ListOverdueLoansUseCase(loan_repo=FakeLoanRepository())
         result = await use_case.execute()
         assert list(result) == []
