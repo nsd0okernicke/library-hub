@@ -407,7 +407,7 @@ Alle Events werden als JSON über RabbitMQ übertragen. Jedes Event enthält die
 ## 12. Out of Scope (MVP)
 	- Komplexes User-Management / Authentifizierung
 	- Bezahlsystem- Benachrichtigungen per E-Mail/SMS
-	- Frontend (kann später mit React/Vue hinzugefügt werden)
+	- Frontend → see [`frontend-concept.md`](frontend-concept.md) and [`frontend-requirements.md`](frontend-requirements.md)
 	- Buch-Cover-Upload oder komplexe Metadaten
 
 ## 6. Infrastruktur-Schicht: Integrationstests & Adapter
