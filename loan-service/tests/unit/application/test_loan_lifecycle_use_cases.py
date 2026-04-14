@@ -1,6 +1,5 @@
 """Unit tests for loan lifecycle use cases (Loan Service).
 
-🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested:
   loan.application.activate_loan_use_case.ActivateLoanUseCase   (PENDING→ACTIVE)
   loan.application.reject_loan_use_case.RejectLoanUseCase        (PENDING→REJECTED)

@@ -1,6 +1,5 @@
 """Unit tests for ReserveBookUseCase and ReturnBookUseCase (Catalog Service).
 
-🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested:
   catalog.application.reserve_book_use_case.ReserveBookUseCase  (CAT-4 incoming)
   catalog.application.return_book_use_case.ReturnBookUseCase     (CAT-6)

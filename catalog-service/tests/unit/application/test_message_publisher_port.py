@@ -1,6 +1,5 @@
 """Contract tests for the MessagePublisher port (Catalog Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
 Tested class: catalog.ports.message_publisher.MessagePublisher
 """
 
@@ -74,3 +73,4 @@ class TestMessagePublisherContract:
             {"event_type": "BookOutOfStock", "version": "1.0"},
         )
         assert len(publisher.published) == 2
+

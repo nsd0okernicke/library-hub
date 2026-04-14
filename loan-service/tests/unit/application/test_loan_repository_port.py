@@ -1,7 +1,6 @@
 """Contract tests for the LoanRepository port (Loan Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
-Tested class: loan.ports.loan_repository.LoanRepository
+Tested class: loan.domain.ports.loan_repository.LoanRepository
 """
 
 from __future__ import annotations

@@ -1,6 +1,5 @@
 """Unit tests for the User domain model (Loan Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
 Tested class: loan.domain.user.User
 """
 

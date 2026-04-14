@@ -1,6 +1,5 @@
 """Unit tests for the Isbn value object (Catalog Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
 Tested class: catalog.domain.isbn.Isbn
 
 ISBN-10 and ISBN-13 are validated according to ISO 2108:

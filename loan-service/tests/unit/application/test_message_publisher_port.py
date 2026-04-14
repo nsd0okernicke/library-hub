@@ -1,7 +1,6 @@
 """Contract tests for the MessagePublisher port (Loan Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
-Tested class: loan.ports.message_publisher.MessagePublisher
+Tested class: loan.domain.ports.message_publisher.MessagePublisher
 """
 
 from __future__ import annotations

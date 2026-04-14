@@ -1,6 +1,5 @@
 """Unit tests for AddBookUseCase (Catalog Service).
 
-🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested: catalog.application.add_book_use_case.AddBookUseCase
 
 Use case: CAT-3 – Add a new book (requirements.md §5)
@@ -152,3 +151,4 @@ class TestAddBookUseCase:
             description="A great book.",
         )
         assert book.description == "A great book."
+

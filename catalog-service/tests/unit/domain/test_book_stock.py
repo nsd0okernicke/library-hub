@@ -1,6 +1,5 @@
 """Unit tests for the BookStock domain model (Catalog Service).
 
-🔵 REFACTOR: isbn fields now use the Isbn value object.
 Tested class: catalog.domain.book_stock.BookStock
 """
 

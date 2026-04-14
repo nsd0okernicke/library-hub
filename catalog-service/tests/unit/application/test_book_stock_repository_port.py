@@ -1,7 +1,6 @@
 """Contract tests for the BookStockRepository port (Catalog Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
-Tested class: catalog.ports.book_stock_repository.BookStockRepository
+Tested class: catalog.domain.ports.book_stock_repository.BookStockRepository
 """
 
 from __future__ import annotations
@@ -79,3 +78,4 @@ class TestBookStockRepositoryContract:
         result = await repo.find_by_isbn(_ISBN)
         assert result is not None
         assert result.available_count == 2
+

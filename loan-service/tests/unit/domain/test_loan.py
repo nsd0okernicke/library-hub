@@ -1,6 +1,5 @@
 """Unit tests for the Loan domain model and LoanStatus (Loan Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
 Tested classes:
     - loan.domain.loan_status.LoanStatus
     - loan.domain.loan.Loan

@@ -1,7 +1,6 @@
 """Unit tests for SearchBooksUseCase, GetBookUseCase, CheckAvailabilityUseCase
 (Catalog Service).
 
-🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested:
   catalog.application.search_books_use_case.SearchBooksUseCase  (CAT-1)
   catalog.application.get_book_use_case.GetBookUseCase           (CAT-5)
@@ -183,3 +182,4 @@ class TestCheckAvailabilityUseCase:
         """Unknown ISBN raises ValueError (→ HTTP 404)."""
         with pytest.raises(ValueError, match="[Nn]ot found|[Nn]o stock"):
             await use_case.execute(_ISBN_B)
+

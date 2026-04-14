@@ -1,6 +1,5 @@
 """Unit tests for RequestLoanUseCase (Loan Service).
 
-🔴 RED phase: Tests must FAIL before any implementation exists.
 Tested: loan.application.request_loan_use_case.RequestLoanUseCase (LOAN-1)
 
 Flow: POST /loans → create Loan(PENDING) → publish BookLoanRequested.

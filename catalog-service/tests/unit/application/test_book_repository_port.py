@@ -1,7 +1,6 @@
 """Contract tests for the BookRepository port (Catalog Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
-Tested class: catalog.ports.book_repository.BookRepository
+Tested class: catalog.domain.ports.book_repository.BookRepository
 
 A port is an abstract interface (ABC). These tests ensure that:
 - The port cannot be instantiated directly
@@ -155,4 +154,5 @@ class TestBookRepositoryContract:
         books, total = await repo.find_all(page=1, page_size=1)
         assert total == 2
         assert len(list(books)) == 1
+
 

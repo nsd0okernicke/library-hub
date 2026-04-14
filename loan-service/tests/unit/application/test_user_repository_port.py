@@ -1,6 +1,5 @@
 """Contract tests for the UserRepository port (Loan Service).
 
-🔴 RED phase: These tests must FAIL before any implementation exists.
 Tested class: loan.ports.user_repository.UserRepository
 """
 
