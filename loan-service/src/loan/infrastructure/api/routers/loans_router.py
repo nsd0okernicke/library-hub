@@ -50,7 +50,13 @@ def get_publisher() -> MessagePublisher:
 
 # ── GET /loans ────────────────────────────────────────────────────────────────
 
-@router.get("/loans", response_model=LoansListResponse)
+@router.get(
+    "/loans",
+    response_model=LoansListResponse,
+    summary="List loans for a user",
+    response_description="All loans belonging to the given user.",
+    responses={422: {"description": "user_id is not a valid UUID."}},
+)
 async def get_loans(
     user_id: str,
     loan_repo: LoanRepository = Depends(get_loan_repo),
@@ -93,7 +99,13 @@ async def get_loans(
 
 # ── POST /loans ───────────────────────────────────────────────────────────────
 
-@router.post("/loans", response_model=LoanResponse, status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/loans",
+    response_model=LoanResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Request a book loan",
+    response_description="The newly created loan with status PENDING.",
+)
 async def create_loan(
     payload: LoanRequest,
     loan_repo: LoanRepository = Depends(get_loan_repo),
@@ -116,7 +128,12 @@ async def create_loan(
 
 # ── GET /loans/overdue ────────────────────────────────────────────────────────
 
-@router.get("/loans/overdue", response_model=LoansListResponse)
+@router.get(
+    "/loans/overdue",
+    response_model=LoansListResponse,
+    summary="List overdue loans",
+    response_description="All active loans whose due date has passed.",
+)
 async def get_overdue_loans(
     loan_repo: LoanRepository = Depends(get_loan_repo),
 ) -> LoansListResponse:
@@ -147,7 +164,13 @@ async def get_overdue_loans(
 
 # ── GET /loans/{loan_id} ──────────────────────────────────────────────────────
 
-@router.get("/loans/{loan_id}", response_model=LoanDetailResponse)
+@router.get(
+    "/loans/{loan_id}",
+    response_model=LoanDetailResponse,
+    summary="Get a loan by ID",
+    response_description="Full details of the requested loan.",
+    responses={404: {"description": "Loan not found."}},
+)
 async def get_loan(
     loan_id: uuid.UUID,
     loan_repo: LoanRepository = Depends(get_loan_repo),
@@ -181,7 +204,16 @@ async def get_loan(
 
 # ── POST /loans/{loan_id}/activate ────────────────────────────────────────────
 
-@router.post("/loans/{loan_id}/activate", response_model=LoanDetailResponse)
+@router.post(
+    "/loans/{loan_id}/activate",
+    response_model=LoanDetailResponse,
+    summary="Activate a loan",
+    response_description="Loan with status ACTIVE.",
+    responses={
+        404: {"description": "Loan not found."},
+        409: {"description": "Invalid status transition."},
+    },
+)
 async def activate_loan(
     loan_id: uuid.UUID,
     loan_repo: LoanRepository = Depends(get_loan_repo),
@@ -220,7 +252,16 @@ async def activate_loan(
 
 # ── POST /loans/{loan_id}/return ──────────────────────────────────────────────
 
-@router.post("/loans/{loan_id}/return", response_model=LoanDetailResponse)
+@router.post(
+    "/loans/{loan_id}/return",
+    response_model=LoanDetailResponse,
+    summary="Return a book",
+    response_description="Loan with status RETURNED.",
+    responses={
+        404: {"description": "Loan not found."},
+        409: {"description": "Loan is not active or already returned."},
+    },
+)
 async def return_loan(
     loan_id: uuid.UUID,
     loan_repo: LoanRepository = Depends(get_loan_repo),

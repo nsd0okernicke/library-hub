@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     )
 
     database_url: str = (
-        "postgresql+asyncpg://postgres:password@localhost:5432/catalog_db"
+        "postgresql+asyncpg://catalog:password@localhost:5432/catalog_db"
     )
     rabbitmq_url: str = "amqp://guest:guest@localhost:5672/"
     rabbitmq_exchange: str = "library.events"

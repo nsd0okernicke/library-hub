@@ -24,7 +24,14 @@ def get_user_repo() -> UserRepository:
 
 # ── POST /users ───────────────────────────────────────────────────────────────
 
-@router.post("/users", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/users",
+    response_model=UserResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Register a new user",
+    response_description="The newly created user.",
+    responses={409: {"description": "A user with this e-mail already exists."}},
+)
 async def create_user(
     payload: UserRequest,
     user_repo: UserRepository = Depends(get_user_repo),

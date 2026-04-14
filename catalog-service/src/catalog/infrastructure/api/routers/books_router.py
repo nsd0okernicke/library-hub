@@ -48,7 +48,12 @@ def get_stock_repo() -> BookStockRepository:
 
 # ── GET /books ────────────────────────────────────────────────────────────────
 
-@router.get("/books", response_model=BooksListResponse)
+@router.get(
+    "/books",
+    response_model=BooksListResponse,
+    summary="List all books",
+    response_description="A list of all books in the catalogue.",
+)
 async def get_books(
     book_repo: BookRepository = Depends(get_book_repo),
 ) -> BooksListResponse:
@@ -75,7 +80,14 @@ async def get_books(
 
 # ── POST /books ───────────────────────────────────────────────────────────────
 
-@router.post("/books", response_model=BookResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/books",
+    response_model=BookResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a book",
+    response_description="The newly created book.",
+    responses={409: {"description": "A book with this ISBN already exists."}},
+)
 async def create_book(
     payload: BookRequest,
     book_repo: BookRepository = Depends(get_book_repo),
@@ -119,7 +131,16 @@ async def create_book(
 # NOTE: Must be registered BEFORE GET /books/{isbn} so that Starlette matches
 # the more specific route first (routes are matched in definition order).
 
-@router.get("/books/{isbn}/availability", response_model=BookStockResponse)
+@router.get(
+    "/books/{isbn}/availability",
+    response_model=BookStockResponse,
+    summary="Check stock availability",
+    response_description="Current available stock count for the given ISBN.",
+    responses={
+        404: {"description": "No stock entry found for this ISBN."},
+        422: {"description": "The ISBN format is invalid."},
+    },
+)
 async def get_availability(
     isbn: str,
     stock_repo: BookStockRepository = Depends(get_stock_repo),
@@ -151,7 +172,16 @@ async def get_availability(
 
 # ── POST /books/{isbn}/return ─────────────────────────────────────────────────
 
-@router.post("/books/{isbn}/return", response_model=BookStockResponse)
+@router.post(
+    "/books/{isbn}/return",
+    response_model=BookStockResponse,
+    summary="Return a book",
+    response_description="Updated stock after the return.",
+    responses={
+        404: {"description": "No stock entry found for this ISBN."},
+        422: {"description": "The ISBN format is invalid."},
+    },
+)
 async def return_book(
     isbn: str,
     stock_repo: BookStockRepository = Depends(get_stock_repo),
@@ -184,7 +214,16 @@ async def return_book(
 # ── GET /books/{isbn} ─────────────────────────────────────────────────────────
 # NOTE: Must be registered AFTER /books/{isbn}/availability and /books/{isbn}/return.
 
-@router.get("/books/{isbn}", response_model=BookResponse)
+@router.get(
+    "/books/{isbn}",
+    response_model=BookResponse,
+    summary="Get a book by ISBN",
+    response_description="All metadata for the requested book.",
+    responses={
+        404: {"description": "No book found for this ISBN."},
+        422: {"description": "The ISBN format is invalid."},
+    },
+)
 async def get_book(
     isbn: str,
     book_repo: BookRepository = Depends(get_book_repo),
