@@ -33,7 +33,7 @@ def get_loan_repo() -> LoanRepository:
     Raises:
         RuntimeError: If no override has been registered.
     """
-    raise RuntimeError("get_loan_repo must be overridden via dependency_overrides")
+    raise RuntimeError("get_loan_repo must be overridden via dependency_overrides")  # pragma: no cover
 
 
 def get_publisher() -> MessagePublisher:
@@ -45,7 +45,7 @@ def get_publisher() -> MessagePublisher:
     Raises:
         RuntimeError: If no override has been registered.
     """
-    raise RuntimeError("get_publisher must be overridden via dependency_overrides")
+    raise RuntimeError("get_publisher must be overridden via dependency_overrides")  # pragma: no cover
 
 
 # ── GET /loans ────────────────────────────────────────────────────────────────
@@ -122,7 +122,13 @@ async def create_loan(
         LoanResponse with loan_id and status=PENDING.
     """
     use_case = RequestLoanUseCase(loan_repo, publisher)
-    loan = await use_case.execute(isbn=Isbn(payload.isbn), user_id=payload.user_id)
+    try:
+        isbn = Isbn(payload.isbn)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
+    loan = await use_case.execute(isbn=isbn, user_id=payload.user_id)
     return LoanResponse(loan_id=str(loan.id), status=loan.status.value)
 
 

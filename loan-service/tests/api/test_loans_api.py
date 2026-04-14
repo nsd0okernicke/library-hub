@@ -2,8 +2,6 @@
 
 Uses dependency overrides with in-memory fake repositories (via conftest.py)
 so that no real database setup is required.
-
-TDD status: RED → tests define the expected behaviour BEFORE the implementation exists.
 """
 import uuid
 
@@ -13,14 +11,14 @@ from httpx import AsyncClient, ASGITransport
 from loan.main import app
 
 ISBN_VALID = "978-3-16-148410-0"
-USER_ID = "550e8400-e29b-41d4-a716-446655440000"  # Feste UUID für deterministische Tests
+USER_ID = "550e8400-e29b-41d4-a716-446655440000"  # fixed UUID for deterministic tests
 
 
 # ── GET /loans (LOAN-3) ───────────────────────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_get_loans_returns_200_and_list() -> None:
-    """GET /loans gibt 200 OK und eine leere Liste zurück."""
+    """GET /loans returns 200 OK and an empty list."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get(f"/loans?user_id={USER_ID}")
     assert response.status_code == 200
@@ -29,9 +27,17 @@ async def test_get_loans_returns_200_and_list() -> None:
 
 @pytest.mark.asyncio
 async def test_get_loans_missing_user_id_returns_422() -> None:
-    """GET /loans ohne user_id gibt 422 zurück."""
+    """GET /loans without user_id returns 422."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/loans")
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_get_loans_invalid_user_id_returns_422() -> None:
+    """GET /loans with a non-UUID user_id returns 422."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/loans?user_id=not-a-uuid")
     assert response.status_code == 422
 
 
@@ -39,11 +45,8 @@ async def test_get_loans_missing_user_id_returns_422() -> None:
 
 @pytest.mark.asyncio
 async def test_post_loans_creates_loan() -> None:
-    """POST /loans legt eine neue Ausleih-Anfrage an und gibt 202 zurück."""
-    payload = {
-        "isbn": ISBN_VALID,
-        "user_id": str(uuid.uuid4()),
-    }
+    """POST /loans creates a new loan request and returns 202."""
+    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/loans", json=payload)
     assert response.status_code == 202
@@ -54,9 +57,19 @@ async def test_post_loans_creates_loan() -> None:
 
 @pytest.mark.asyncio
 async def test_post_loans_missing_fields_returns_422() -> None:
-    """POST /loans ohne Pflichtfelder gibt 422 zurück."""
+    """POST /loans without required fields returns 422."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/loans", json={"isbn": ISBN_VALID})
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_post_loans_invalid_isbn_returns_422() -> None:
+    """POST /loans with an invalid ISBN format returns 422."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post(
+            "/loans", json={"isbn": "NOT-AN-ISBN", "user_id": str(uuid.uuid4())}
+        )
     assert response.status_code == 422
 
 
@@ -64,7 +77,7 @@ async def test_post_loans_missing_fields_returns_422() -> None:
 
 @pytest.mark.asyncio
 async def test_post_users_creates_user() -> None:
-    """POST /users legt einen neuen Nutzer an und gibt 201 zurück."""
+    """POST /users creates a new user and returns 201."""
     payload = {"name": "Alice Müller", "email": "alice@example.com"}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/users", json=payload)
@@ -77,7 +90,7 @@ async def test_post_users_creates_user() -> None:
 
 @pytest.mark.asyncio
 async def test_post_users_duplicate_email_returns_409() -> None:
-    """POST /users mit doppelter E-Mail gibt 409 zurück."""
+    """POST /users with a duplicate e-mail returns 409."""
     payload = {"name": "Alice Müller", "email": "alice@example.com"}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         await ac.post("/users", json=payload)
@@ -87,7 +100,7 @@ async def test_post_users_duplicate_email_returns_409() -> None:
 
 @pytest.mark.asyncio
 async def test_post_users_missing_fields_returns_422() -> None:
-    """POST /users ohne Pflichtfelder gibt 422 zurück."""
+    """POST /users without required fields returns 422."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post("/users", json={"name": "Alice"})
     assert response.status_code == 422
@@ -97,7 +110,7 @@ async def test_post_users_missing_fields_returns_422() -> None:
 
 @pytest.mark.asyncio
 async def test_get_loan_by_id_returns_200() -> None:
-    """GET /loans/{loan_id} gibt 200 OK + Loan-Daten zurück."""
+    """GET /loans/{loan_id} returns 200 OK and loan data."""
     payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         create_resp = await ac.post("/loans", json=payload)
@@ -111,24 +124,56 @@ async def test_get_loan_by_id_returns_200() -> None:
 
 @pytest.mark.asyncio
 async def test_get_loan_by_id_unknown_returns_404() -> None:
-    """GET /loans/{loan_id} mit unbekannter ID gibt 404 zurück."""
+    """GET /loans/{loan_id} with unknown ID returns 404."""
     unknown_id = str(uuid.uuid4())
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get(f"/loans/{unknown_id}")
     assert response.status_code == 404
 
 
+# ── POST /loans/{loan_id}/activate ───────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_activate_loan_returns_200() -> None:
+    """POST /loans/{loan_id}/activate transitions PENDING → ACTIVE."""
+    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        create_resp = await ac.post("/loans", json=payload)
+        loan_id = create_resp.json()["loan_id"]
+        response = await ac.post(f"/loans/{loan_id}/activate")
+    assert response.status_code == 200
+    assert response.json()["status"] == "ACTIVE"
+
+
+@pytest.mark.asyncio
+async def test_activate_loan_unknown_id_returns_404() -> None:
+    """POST /loans/{loan_id}/activate with unknown ID returns 404."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.post(f"/loans/{uuid.uuid4()}/activate")
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_activate_loan_already_active_returns_409() -> None:
+    """POST /loans/{loan_id}/activate on an already active loan returns 409."""
+    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        create_resp = await ac.post("/loans", json=payload)
+        loan_id = create_resp.json()["loan_id"]
+        await ac.post(f"/loans/{loan_id}/activate")
+        response = await ac.post(f"/loans/{loan_id}/activate")
+    assert response.status_code == 409
+
+
 # ── POST /loans/{loan_id}/return (LOAN-4) ─────────────────────────────────────
 
 @pytest.mark.asyncio
 async def test_return_loan_returns_200() -> None:
-    """POST /loans/{loan_id}/return gibt 200 OK zurück (ACTIVE → RETURNED)."""
-    user_id = str(uuid.uuid4())
-    payload = {"isbn": ISBN_VALID, "user_id": user_id}
+    """POST /loans/{loan_id}/return returns 200 (ACTIVE → RETURNED)."""
+    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         create_resp = await ac.post("/loans", json=payload)
         loan_id = create_resp.json()["loan_id"]
-        # Loan muss erst aktiviert werden (PENDING → ACTIVE)
         await ac.post(f"/loans/{loan_id}/activate")
         response = await ac.post(f"/loans/{loan_id}/return")
     assert response.status_code == 200
@@ -138,18 +183,16 @@ async def test_return_loan_returns_200() -> None:
 
 @pytest.mark.asyncio
 async def test_return_loan_unknown_id_returns_404() -> None:
-    """POST /loans/{loan_id}/return mit unbekannter ID gibt 404 zurück."""
-    unknown_id = str(uuid.uuid4())
+    """POST /loans/{loan_id}/return with unknown ID returns 404."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        response = await ac.post(f"/loans/{unknown_id}/return")
+        response = await ac.post(f"/loans/{uuid.uuid4()}/return")
     assert response.status_code == 404
 
 
 @pytest.mark.asyncio
 async def test_return_loan_already_returned_returns_409() -> None:
-    """POST /loans/{loan_id}/return zweimal gibt 409 Conflict zurück."""
-    user_id = str(uuid.uuid4())
-    payload = {"isbn": ISBN_VALID, "user_id": user_id}
+    """POST /loans/{loan_id}/return twice returns 409."""
+    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         create_resp = await ac.post("/loans", json=payload)
         loan_id = create_resp.json()["loan_id"]
@@ -163,7 +206,7 @@ async def test_return_loan_already_returned_returns_409() -> None:
 
 @pytest.mark.asyncio
 async def test_get_overdue_loans_returns_200_and_list() -> None:
-    """GET /loans/overdue gibt 200 OK und eine Liste zurück."""
+    """GET /loans/overdue returns 200 OK and a list."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/loans/overdue")
     assert response.status_code == 200

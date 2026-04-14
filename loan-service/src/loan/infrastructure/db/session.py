@@ -1,4 +1,4 @@
-"""Session and engine management for SQLAlchemy (async)."""
+"""Session and engine management for SQLAlchemy (async) – Loan Service."""
 from collections.abc import AsyncGenerator
 
 from sqlalchemy.ext.asyncio import (
@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from catalog.infrastructure.config.settings import get_settings
+from loan.infrastructure.config.settings import get_settings
 
 _settings = get_settings()
 
@@ -25,3 +25,4 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     async with AsyncSessionLocal() as session:  # pragma: no cover
         yield session  # pragma: no cover
+

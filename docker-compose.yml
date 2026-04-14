@@ -1,0 +1,57 @@
+services:
+
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  catalog-db:
+    image: postgres:16-alpine
+    container_name: libraryhub-catalog-db
+    environment:
+      POSTGRES_USER: catalog
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: catalog_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U catalog -d catalog_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  loan-db:
+    image: postgres:16-alpine
+    container_name: libraryhub-loan-db
+    environment:
+      POSTGRES_USER: loan
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: loan_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - loan-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loan -d loan_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── RabbitMQ ────────────────────────────────────────────────────────────────
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: libraryhub-rabbitmq
+    ports:
+      - "5672:5672"    # AMQP
+      - "15672:15672"  # Management UI  →  http://localhost:15672  (guest/guest)
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  catalog-db-data:
+  loan-db-data:
+  rabbitmq-data:
+

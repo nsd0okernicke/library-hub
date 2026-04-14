@@ -1,6 +1,10 @@
 """Loan Service – FastAPI application entry point."""
 
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+
+from fastapi import Depends, FastAPI
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from loan.infrastructure.api.routers.loans_router import (
     get_loan_repo,
@@ -11,12 +15,36 @@ from loan.infrastructure.api.routers.users_router import (
     get_user_repo,
     router as users_router,
 )
+from loan.infrastructure.db.models import Base
+from loan.infrastructure.db.session import engine, get_session
+from loan.infrastructure.db.sqlalchemy_loan_repository import SqlAlchemyLoanRepository
+from loan.infrastructure.db.sqlalchemy_user_repository import SqlAlchemyUserRepository
+from loan.infrastructure.messaging.logging_publisher import LoggingMessagePublisher
+
+
+# ── Lifespan ──────────────────────────────────────────────────────────────────
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    """Create all DB tables on startup (dev convenience – replace with Alembic later).
+
+    Args:
+        app: The FastAPI application instance.
+
+    Yields:
+        None – runs shutdown logic after yield.
+    """
+    async with engine.begin() as conn:  # pragma: no cover
+        await conn.run_sync(Base.metadata.create_all)  # pragma: no cover
+    yield  # pragma: no cover
+
 
 # ── Application ───────────────────────────────────────────────────────────────
 
 app = FastAPI(
     title="LibraryHub – Loan Service",
     version="0.1.0",
+    lifespan=lifespan,
     description=(
         "Manages loan transactions and user registration for the LibraryHub system.\n\n"
         "## Features\n"
@@ -58,6 +86,32 @@ app = FastAPI(
 
 app.include_router(loans_router, tags=["loans"])
 app.include_router(users_router, tags=["users"])
+
+
+# ── Production dependency overrides ──────────────────────────────────────────
+
+def _prod_user_repo(  # pragma: no cover
+    session: AsyncSession = Depends(get_session),
+) -> SqlAlchemyUserRepository:
+    """Production UserRepository implementation (SQLAlchemy)."""
+    return SqlAlchemyUserRepository(session)
+
+
+def _prod_loan_repo(  # pragma: no cover
+    session: AsyncSession = Depends(get_session),
+) -> SqlAlchemyLoanRepository:
+    """Production LoanRepository implementation (SQLAlchemy)."""
+    return SqlAlchemyLoanRepository(session)
+
+
+def _prod_publisher() -> LoggingMessagePublisher:  # pragma: no cover
+    """Development MessagePublisher (logs instead of sending to RabbitMQ)."""
+    return LoggingMessagePublisher()
+
+
+app.dependency_overrides[get_user_repo] = _prod_user_repo
+app.dependency_overrides[get_loan_repo] = _prod_loan_repo
+app.dependency_overrides[get_publisher] = _prod_publisher
 
 
 # ── Health ────────────────────────────────────────────────────────────────────

@@ -19,7 +19,7 @@ def get_user_repo() -> UserRepository:
     Raises:
         RuntimeError: If no override has been registered.
     """
-    raise RuntimeError("get_user_repo must be overridden via dependency_overrides")
+    raise RuntimeError("get_user_repo must be overridden via dependency_overrides")  # pragma: no cover
 
 
 # ── POST /users ───────────────────────────────────────────────────────────────
