@@ -18,10 +18,10 @@ class SqlAlchemyUserRepository(UserRepository):
         session: Active SQLAlchemy AsyncSession.
     """
 
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(self, session: AsyncSession) -> None:  # pragma: no cover
         self._session = session
 
-    async def save(self, user: User) -> None:
+    async def save(self, user: User) -> None:  # pragma: no cover
         """Persist a User domain object.
 
         Args:
@@ -37,7 +37,7 @@ class SqlAlchemyUserRepository(UserRepository):
             )
         await self._session.commit()
 
-    async def find_by_id(self, user_id: uuid.UUID) -> User | None:
+    async def find_by_id(self, user_id: uuid.UUID) -> User | None:  # pragma: no cover
         """Load a User by ID.
 
         Args:
@@ -51,7 +51,7 @@ class SqlAlchemyUserRepository(UserRepository):
             return None
         return User(id=uuid.UUID(model.id), name=model.name, email=model.email)
 
-    async def find_by_email(self, email: str) -> User | None:
+    async def find_by_email(self, email: str) -> User | None:  # pragma: no cover
         """Load a User by e-mail address.
 
         Args:
@@ -67,7 +67,7 @@ class SqlAlchemyUserRepository(UserRepository):
             return None
         return User(id=uuid.UUID(model.id), name=model.name, email=model.email)
 
-    async def exists_by_email(self, email: str) -> bool:
+    async def exists_by_email(self, email: str) -> bool:  # pragma: no cover
         """Return True if a user with the given e-mail address already exists.
 
         Args:

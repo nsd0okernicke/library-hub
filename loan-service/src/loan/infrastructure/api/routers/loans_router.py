@@ -3,7 +3,6 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from loan.application.activate_loan_use_case import ActivateLoanUseCase
 from loan.application.get_loan_use_case import GetLoanUseCase
 from loan.application.list_loans_use_case import ListLoansUseCase
 from loan.application.list_overdue_loans_use_case import ListOverdueLoansUseCase
@@ -198,54 +197,6 @@ async def get_loan(
         loan = await use_case.execute(loan_id=loan_id)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-    return LoanDetailResponse(
-        loan_id=loan.id,
-        isbn=str(loan.isbn),
-        user_id=loan.user_id,
-        status=loan.status.value,
-        due_date=loan.due_date,
-        returned_at=loan.returned_at,
-    )
-
-
-# ── POST /loans/{loan_id}/activate ────────────────────────────────────────────
-
-@router.post(
-    "/loans/{loan_id}/activate",
-    response_model=LoanDetailResponse,
-    summary="Activate a loan",
-    response_description="Loan with status ACTIVE.",
-    responses={
-        404: {"description": "Loan not found."},
-        409: {"description": "Invalid status transition."},
-    },
-)
-async def activate_loan(
-    loan_id: uuid.UUID,
-    loan_repo: LoanRepository = Depends(get_loan_repo),
-) -> LoanDetailResponse:
-    """Activate a loan (PENDING → ACTIVE).
-
-    Called internally by the BookReserved event consumer.
-
-    Args:
-        loan_id: UUID of the loan.
-        loan_repo: Repository for loan operations.
-
-    Returns:
-        LoanDetailResponse with status=ACTIVE.
-
-    Raises:
-        HTTPException: 404 if not found, 409 on invalid status transition.
-    """
-    use_case = ActivateLoanUseCase(loan_repo)
-    try:
-        loan = await use_case.execute(loan_id=loan_id)
-    except ValueError as e:
-        msg = str(e)
-        if "not found" in msg.lower():
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=msg)
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=msg)
     return LoanDetailResponse(
         loan_id=loan.id,
         isbn=str(loan.isbn),

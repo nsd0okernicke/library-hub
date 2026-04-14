@@ -19,6 +19,15 @@ from loan.infrastructure.api.routers.loans_router import (
 from loan.infrastructure.api.routers.users_router import get_user_repo
 from loan.main import app
 
+# Module-level reference so tests can reach the shared in-memory repo directly.
+_current_loan_repo: InMemoryLoanRepository | None = None
+
+
+def get_current_loan_repo() -> InMemoryLoanRepository:
+    """Return the InMemoryLoanRepository used in the current test."""
+    assert _current_loan_repo is not None, "No active test – repo not initialised"
+    return _current_loan_repo
+
 
 @pytest.fixture(autouse=True)
 def override_repositories() -> Generator[None, None, None]:
@@ -27,7 +36,9 @@ def override_repositories() -> Generator[None, None, None]:
     Yields:
         None – cleans up dependency overrides after each test.
     """
+    global _current_loan_repo
     loan_repo = InMemoryLoanRepository()
+    _current_loan_repo = loan_repo
     user_repo = InMemoryUserRepository()
     publisher = InMemoryMessagePublisher()
     app.dependency_overrides[get_loan_repo] = lambda: loan_repo
@@ -35,4 +46,5 @@ def override_repositories() -> Generator[None, None, None]:
     app.dependency_overrides[get_user_repo] = lambda: user_repo
     yield
     app.dependency_overrides.clear()
+    _current_loan_repo = None
 

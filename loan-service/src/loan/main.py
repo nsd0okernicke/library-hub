@@ -2,10 +2,14 @@
 
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+import logging
 
+import aio_pika
 from fastapi import Depends, FastAPI
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from loan.application.activate_loan_use_case import ActivateLoanUseCase
+from loan.application.reject_loan_use_case import RejectLoanUseCase
 from loan.infrastructure.api.routers.loans_router import (
     get_loan_repo,
     get_publisher,
@@ -15,28 +19,70 @@ from loan.infrastructure.api.routers.users_router import (
     get_user_repo,
     router as users_router,
 )
+from loan.infrastructure.config.settings import get_settings
 from loan.infrastructure.db.models import Base
-from loan.infrastructure.db.session import engine, get_session
+from loan.infrastructure.db.session import engine, get_session, AsyncSessionLocal
 from loan.infrastructure.db.sqlalchemy_loan_repository import SqlAlchemyLoanRepository
 from loan.infrastructure.db.sqlalchemy_user_repository import SqlAlchemyUserRepository
 from loan.infrastructure.messaging.logging_publisher import LoggingMessagePublisher
+from loan.infrastructure.messaging.rabbitmq_consumer import RabbitmqConsumer
+from loan.infrastructure.messaging.rabbitmq_publisher import RabbitmqPublisher
+
+logger = logging.getLogger(__name__)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    """Create all DB tables on startup (dev convenience – replace with Alembic later).
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no cover
+    """Create DB tables, start RabbitMQ consumer and wire real publisher on startup."""
+    settings = get_settings()
 
-    Args:
-        app: The FastAPI application instance.
+    # Create DB tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
-    Yields:
-        None – runs shutdown logic after yield.
-    """
-    async with engine.begin() as conn:  # pragma: no cover
-        await conn.run_sync(Base.metadata.create_all)  # pragma: no cover
-    yield  # pragma: no cover
+    # Connect to RabbitMQ – wire real publisher and start consumer
+    try:
+        connection = await aio_pika.connect_robust(settings.rabbitmq_url)
+        channel = await connection.channel()
+        exchange = await channel.declare_exchange(
+            settings.rabbitmq_exchange,
+            aio_pika.ExchangeType.TOPIC,
+            durable=True,
+        )
+        real_publisher = RabbitmqPublisher(
+            exchange=exchange, exchange_name=settings.rabbitmq_exchange
+        )
+
+        # Override publisher dependency with real RabbitMQ publisher
+        app.dependency_overrides[get_publisher] = lambda: real_publisher
+
+        # Consumer: use a per-message session factory so each message gets its own DB session
+        async def _handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
+            async with AsyncSessionLocal() as session:
+                loan_repo = SqlAlchemyLoanRepository(session)
+                activate_uc = ActivateLoanUseCase(loan_repo=loan_repo)
+                reject_uc = RejectLoanUseCase(loan_repo=loan_repo)
+                consumer = RabbitmqConsumer(activate_use_case=activate_uc, reject_use_case=reject_uc)
+                await consumer.handle_message(message)
+
+        for queue_name, routing_key in [
+            (settings.rabbitmq_queue_book_reserved, "book.reserved"),
+            (settings.rabbitmq_queue_book_out_of_stock, "book.out_of_stock"),
+        ]:
+            queue = await channel.declare_queue(queue_name, durable=True)
+            await queue.bind(exchange, routing_key=routing_key)
+            await queue.consume(_handle_message)
+
+        logger.info("Loan: RabbitMQ consumer started")
+        yield
+        await connection.close()
+        logger.info("Loan: RabbitMQ connection closed")
+
+    except Exception as exc:
+        logger.warning("Loan: RabbitMQ not available – running without messaging: %s", exc)
+        yield
 
 
 # ── Application ───────────────────────────────────────────────────────────────
@@ -129,4 +175,3 @@ async def health() -> dict[str, str]:
         A dict with ``status`` and ``service`` keys.
     """
     return {"status": "ok", "service": "loan-service"}
-

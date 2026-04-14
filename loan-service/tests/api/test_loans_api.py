@@ -8,7 +8,10 @@ import uuid
 import pytest
 from httpx import AsyncClient, ASGITransport
 
+from loan.application.activate_loan_use_case import ActivateLoanUseCase
+from loan.application.reject_loan_use_case import RejectLoanUseCase
 from loan.main import app
+from tests.api.conftest import get_current_loan_repo
 
 ISBN_VALID = "978-3-16-148410-0"
 USER_ID = "550e8400-e29b-41d4-a716-446655440000"  # fixed UUID for deterministic tests
@@ -131,41 +134,27 @@ async def test_get_loan_by_id_unknown_returns_404() -> None:
     assert response.status_code == 404
 
 
-# ── POST /loans/{loan_id}/activate ───────────────────────────────────────────
+# ── POST /loans/{loan_id}/activate – endpoint removed ────────────────────────
+# Activation is now exclusively event-driven via BookReserved RabbitMQ message.
+# The endpoint no longer exists; 404 is expected for any call to it.
 
 @pytest.mark.asyncio
-async def test_activate_loan_returns_200() -> None:
-    """POST /loans/{loan_id}/activate transitions PENDING → ACTIVE."""
-    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        create_resp = await ac.post("/loans", json=payload)
-        loan_id = create_resp.json()["loan_id"]
-        response = await ac.post(f"/loans/{loan_id}/activate")
-    assert response.status_code == 200
-    assert response.json()["status"] == "ACTIVE"
-
-
-@pytest.mark.asyncio
-async def test_activate_loan_unknown_id_returns_404() -> None:
-    """POST /loans/{loan_id}/activate with unknown ID returns 404."""
+async def test_activate_endpoint_no_longer_exists() -> None:
+    """POST /loans/{loan_id}/activate returns 404 – endpoint was removed."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.post(f"/loans/{uuid.uuid4()}/activate")
     assert response.status_code == 404
 
 
-@pytest.mark.asyncio
-async def test_activate_loan_already_active_returns_409() -> None:
-    """POST /loans/{loan_id}/activate on an already active loan returns 409."""
-    payload = {"isbn": ISBN_VALID, "user_id": str(uuid.uuid4())}
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
-        create_resp = await ac.post("/loans", json=payload)
-        loan_id = create_resp.json()["loan_id"]
-        await ac.post(f"/loans/{loan_id}/activate")
-        response = await ac.post(f"/loans/{loan_id}/activate")
-    assert response.status_code == 409
-
-
 # ── POST /loans/{loan_id}/return (LOAN-4) ─────────────────────────────────────
+# Return tests activate the loan directly via ActivateLoanUseCase on the shared
+# in-memory repo, mirroring what the RabbitmqConsumer does in production.
+
+async def _activate_via_use_case(loan_id: str) -> None:
+    """Simulate a BookReserved event by calling ActivateLoanUseCase directly."""
+    repo = get_current_loan_repo()
+    await ActivateLoanUseCase(loan_repo=repo).execute(loan_id=uuid.UUID(loan_id))
+
 
 @pytest.mark.asyncio
 async def test_return_loan_returns_200() -> None:
@@ -174,11 +163,10 @@ async def test_return_loan_returns_200() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         create_resp = await ac.post("/loans", json=payload)
         loan_id = create_resp.json()["loan_id"]
-        await ac.post(f"/loans/{loan_id}/activate")
+        await _activate_via_use_case(loan_id)
         response = await ac.post(f"/loans/{loan_id}/return")
     assert response.status_code == 200
-    data = response.json()
-    assert data["status"] == "RETURNED"
+    assert response.json()["status"] == "RETURNED"
 
 
 @pytest.mark.asyncio
@@ -196,9 +184,10 @@ async def test_return_loan_already_returned_returns_409() -> None:
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         create_resp = await ac.post("/loans", json=payload)
         loan_id = create_resp.json()["loan_id"]
-        await ac.post(f"/loans/{loan_id}/activate")
+        await _activate_via_use_case(loan_id)
         await ac.post(f"/loans/{loan_id}/return")
         response = await ac.post(f"/loans/{loan_id}/return")
+
     assert response.status_code == 409
 
 

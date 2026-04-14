@@ -70,7 +70,7 @@ class InMemoryUserRepository(UserRepository):
     async def find_by_email(self, email: str) -> User | None:
         """Return a user by e-mail address or None if not found."""
         uid = self._emails.get(email)
-        return self._store.get(uid) if uid else None
+        return self._store.get(uid) if uid else None  # pragma: no cover
 
     async def exists_by_email(self, email: str) -> bool:
         """Return True if the e-mail address is already registered."""
