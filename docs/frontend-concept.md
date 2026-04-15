@@ -92,29 +92,33 @@ library-hub/
 │   │   │   ├── ui/                    ← shadcn/ui base components (Button, Card, Badge, …)
 │   │   │   ├── books/                 ← Book-specific components (BookCard, BookList, …)
 │   │   │   ├── loans/                 ← Loan-specific components (LoanStatusBadge, LoanCard, …)
-│   │   │   └── shared/                ← Cross-domain components (ErrorBoundary, LoadingSpinner, …)
+│   │   │   └── shared/                ← Cross-domain components (NavBar, ErrorBoundary, Toast, …)
 │   │   ├── hooks/                     ← Custom React hooks (data fetching + local state)
 │   │   │   ├── useBooks.ts
 │   │   │   ├── useBookAvailability.ts
 │   │   │   ├── useLoans.ts
+│   │   │   ├── useUser.tsx             ← UserContext + UserProvider
 │   │   │   └── useUsers.ts
 │   │   ├── pages/                     ← Page components – one per route
 │   │   │   ├── BooksPage.tsx
 │   │   │   ├── BookDetailPage.tsx
 │   │   │   ├── LoansPage.tsx
 │   │   │   ├── NewLoanPage.tsx
+│   │   │   ├── LoginPage.tsx          ← FE-8 – e-mail login
 │   │   │   ├── AdminPage.tsx
-│   │   │   └── RegisterPage.tsx
+│   │   │   ├── RegisterPage.tsx
+│   │   │   └── NotFoundPage.tsx       ← back link only, no NavBar
 │   │   ├── lib/                       ← Utility functions, helpers
 │   │   │   ├── utils.ts
 │   │   │   └── formatters.ts
 │   │   ├── types/                     ← Shared TypeScript types (if not generated)
-│   │   ├── App.tsx                    ← Root component + router setup
+│   │   ├── App.tsx                    ← Root component + router setup + NavBar
 │   │   └── main.tsx                   ← Entry point
 │   ├── public/                        ← Static assets
 │   ├── tests/                         ← Tests – mirrors src/ structure
 │   │   ├── components/
 │   │   ├── hooks/
+│   │   ├── mocks/                     ← MSW handlers + shared server
 │   │   └── pages/
 │   ├── index.html
 │   ├── vite.config.ts
@@ -136,6 +140,9 @@ of the backend. The key principle is the same: **dependencies only point inward*
 
 ```
 ┌─────────────────────────────────────────────────────────┐
+│                     NavBar (shared)                      │
+│        uses useUser() context – always rendered          │
+├─────────────────────────────────────────────────────────┤
 │                        pages/                            │
 │   BooksPage │ BookDetailPage │ LoansPage │ AdminPage    │
 │              (routing, page layout, composition)         │
@@ -145,7 +152,7 @@ of the backend. The key principle is the same: **dependencies only point inward*
 │                (pure UI, no data fetching)               │
 ├─────────────────────────────────────────────────────────┤
 │                        hooks/                            │
-│         useBooks │ useLoans │ useUsers │ …              │
+│         useBooks │ useLoans │ useUser │ …               │
 │          (all data fetching + mutation logic)            │
 ├─────────────────────────────────────────────────────────┤
 │                    TanStack Query                        │
@@ -208,9 +215,44 @@ Configured in `package.json`:
 | `/books/:isbn` | `BookDetailPage` | Book details + availability + request loan |
 | `/loans` | `LoansPage` | All loans of the current user |
 | `/loans/new` | `NewLoanPage` | New loan request form |
+| `/login` | `LoginPage` | E-mail login for returning users |
 | `/register` | `RegisterPage` | New user registration form |
-| `/admin` | `AdminPage` | Overdue loans (admin view) |
-| `*` | `NotFoundPage` | 404 fallback for unknown routes |
+| `/admin` | `AdminPage` | Overdue loans (admin view, visible to all) |
+| `*` | `NotFoundPage` | 404 fallback – shows only a back link, no NavBar |
+
+---
+
+## Global Layout
+
+Every page except `NotFoundPage` is wrapped in a `<NavBar />` component that sits outside the
+router's `<Routes>` block. This guarantees consistent navigation on all routes.
+
+```tsx
+// App.tsx (simplified)
+<UserProvider>
+  <BrowserRouter>
+    <NavBar />                   {/* always visible except NotFoundPage */}
+    <Suspense fallback={<LoadingSpinner />}>
+      <Routes>
+        <Route path="/" element={<BooksPage />} />
+        …
+        <Route path="/404" element={<NotFoundPage />} />  {/* no NavBar inside */}
+      </Routes>
+    </Suspense>
+  </BrowserRouter>
+</UserProvider>
+```
+
+### NavBar behaviour
+
+| User state | Displayed elements |
+|------------|--------------------|
+| Not logged in | App name (→ `/`), nav links, **Login** + **Register** buttons |
+| Logged in | App name (→ `/`), nav links, user name, **Logout** button |
+
+- Active route is highlighted via React Router's `NavLink` (`aria-current="page"`)
+- Logout clears context + `localStorage` and redirects to `/`
+- Styling: `bg-blue-700 text-white`, height `h-14`
 
 ---
 
@@ -223,13 +265,55 @@ Instead:
 |------------|----------|-----------|
 | Server data (books, loans, …) | **TanStack Query** | Automatic caching, stale-while-revalidate, deduplication |
 | Local UI state (modal open, input value) | **React useState / useReducer** | Minimal, co-located with the component |
-| Cross-cutting UI state (current user ID) | **React Context** | Only for truly global, rarely changing values |
+| Current user session | **React Context (`UserProvider`)** | Single source of truth for the logged-in user across all pages |
 | Form state | **React Hook Form** | Optimised for forms, integrates with Zod |
+
+### User Session (`UserProvider` / `useUser`)
+
+The current user is managed exclusively via the `UserContext` defined in `hooks/useUser.tsx`.
+
+```ts
+interface StoredUser {
+  userId: string;
+  name: string;
+  email: string;
+}
+
+interface UserContextValue {
+  user: StoredUser | null;
+  setUser: (user: StoredUser) => void;   // called after login or register
+  clearUser: () => void;                  // called on logout
+}
+```
+
+- `UserProvider` initialises from `localStorage` on first render so sessions survive page reloads
+- `setUser` / `clearUser` write through to `localStorage` automatically
+- **Rule:** pages and components must use `useUser()` — never read `localStorage` directly
 
 **Rules:**
 - Never put server data into `useState` – always use TanStack Query
 - Keep `useContext` usage minimal – prefer passing props or using hooks
 - Optimistic updates for mutations (e.g. return loan) to improve perceived performance
+
+---
+
+## Simple Login Flow
+
+Since the project has no password-based authentication, "login" means looking up a user by e-mail:
+
+```
+User enters e-mail
+       │
+       ▼
+GET /api/loan/users?email=<email>
+       │
+  200 OK ──► setUser(response) ──► redirect to /
+       │
+  404  ──► "No account found. Register here."
+```
+
+The backend must expose `GET /users?email=<email>` on the Loan Service (returns `UserResponse`
+or 404). This endpoint is the **only** backend change required for the login feature.
 
 ---
 

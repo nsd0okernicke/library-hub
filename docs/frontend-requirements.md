@@ -76,6 +76,27 @@
 - Days overdue is highlighted in red
 - Empty state: "No overdue loans" message
 - Accessible at route `/admin`
+- Admin link is visible in the global navigation for all users (no role system in MVP)
+---
+### FE-8 – Log in as existing user
+> As a returning user I want to log in with my e-mail address so that I can access my loans without re-registering.
+**Acceptance criteria:**
+- Simple e-mail input form at route `/login`
+- On submit calls `GET /users?email=<email>` on the Loan Service
+- On success (200): stores the returned user in context + `localStorage`, redirects to `/`
+- On 404: shows a friendly message "No account found for this e-mail. Register here." with a link to `/register`
+- Network errors are shown inline
+- If a user is already logged in, visiting `/login` redirects to `/`
+---
+### FE-UI-1 – Global Navigation Bar
+> As a user I want a persistent navigation bar so that I can reach all pages from anywhere in the app.
+**Acceptance criteria:**
+- Visible on every page except `NotFoundPage` (which shows only a back link)
+- Shows the application name "LibraryHub" as a link to `/`
+- Navigation links: *Books* (`/`), *My Loans* (`/loans`), *New Loan* (`/loans/new`), *Admin* (`/admin`)
+- When logged in: shows the user's name and a **Logout** button; clicking logout clears the session and redirects to `/`
+- When not logged in: shows **Login** (`/login`) and **Register** (`/register`) links
+- Active link is visually highlighted
 ---
 ## 3. Non-Functional Requirements
 ### 3.1 Architecture
@@ -308,7 +329,7 @@ Only variables prefixed with `VITE_` are exposed to the browser bundle by Vite.
 |---|----------------------|
 | 1 | Form validates `name` (required) and `email` (required, valid format via Zod) |
 | 2 | `POST /users` is called on submit |
-| 3 | Returned `user_id` is stored in `localStorage` |
+| 3 | Returned `user_id` is stored in context and `localStorage` via `useUser()` |
 | 4 | Duplicate e-mail (409) shows "This e-mail is already registered" |
 | 5 | After success, user is redirected to the book catalogue (`/`) |
 ### FE-7 – View Overdue Loans (Admin)
@@ -318,6 +339,24 @@ Only variables prefixed with `VITE_` are exposed to the browser bundle by Vite.
 | 2 | Each row shows user ID, ISBN, due date, days overdue |
 | 3 | Days overdue is highlighted in red when > 0 |
 | 4 | "No overdue loans" is shown for an empty result |
+### FE-8 – Log in as existing user
+| # | Acceptance Criterion |
+|---|----------------------|
+| 1 | `GET /users?email=<email>` is called with the entered e-mail |
+| 2 | On 200: user is stored via `useUser()` context, user is redirected to `/` |
+| 3 | On 404: message "No account found for this e-mail. Register here." with link to `/register` |
+| 4 | Form shows inline validation error when e-mail format is invalid |
+| 5 | Visiting `/login` while already logged in redirects immediately to `/` |
+### FE-UI-1 – Global Navigation Bar
+| # | Acceptance Criterion |
+|---|----------------------|
+| 1 | NavBar is rendered on every page except `NotFoundPage` |
+| 2 | Application name "LibraryHub" links to `/` |
+| 3 | Navigation links for Books, My Loans, New Loan, Admin are always visible |
+| 4 | When logged in: user name and Logout button are shown in the header |
+| 5 | When logged out: Login and Register links are shown instead |
+| 6 | The currently active route link is visually distinguished |
+| 7 | Logout clears the session (context + localStorage) and redirects to `/` |
 ---
 ## 5. Dependencies (`package.json`)
 ### Runtime dependencies
@@ -351,7 +390,8 @@ Only variables prefixed with `VITE_` are exposed to the browser bundle by Vite.
 | `prettier` | `^3.2` | Code formatter |
 ---
 ## 6. Out of Scope (MVP)
-- Authentication / JWT / protected routes
+- JWT / session tokens / protected routes (authentication is e-mail lookup only)
+- Password-based login
 - Dark mode / theme switching
 - Internationalisation (i18n / l10n)
 - Push notifications for loan status changes
@@ -359,3 +399,4 @@ Only variables prefixed with `VITE_` are exposed to the browser bundle by Vite.
 - E2E tests (Playwright / Cypress) – considered for a later phase
 - PWA / offline support
 - Mobile-native app
+- Role-based access control (admin link is visible to all users)
