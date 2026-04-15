@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
 import type { StoredUser } from '@/types';
 
-const USER_STORAGE_KEY = 'libraryhub_user';
+const USER_STORAGE_KEY = 'user';
 
 interface UserContextValue {
   user: StoredUser | null;
@@ -42,4 +42,5 @@ export function useUser(): UserContextValue {
   if (!ctx) throw new Error('useUser must be used within a UserProvider');
   return ctx;
 }
+
 
