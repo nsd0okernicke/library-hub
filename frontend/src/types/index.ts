@@ -8,6 +8,16 @@ export interface StoredUser {
   email: string;
 }
 
+/** A loan as returned by the Loan Service API. */
+export interface Loan {
+  loan_id: string;
+  isbn: string;
+  user_id: string;
+  status: LoanStatus;
+  due_date: string | null;
+  returned_at: string | null;
+}
+
 /** Generic paginated API response envelope. */
 export interface PaginatedResponse<T> {
   items: T[];
@@ -15,4 +25,5 @@ export interface PaginatedResponse<T> {
   page: number;
   page_size: number;
 }
+
 
