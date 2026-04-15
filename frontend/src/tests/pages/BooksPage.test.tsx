@@ -1,8 +1,17 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
-import BooksPage from './BooksPage';
+import { MemoryRouter } from 'react-router-dom';
+import BooksPage from '@/pages/BooksPage';
 import { http, HttpResponse } from 'msw';
-import { server } from '../tests/mocks/server';
+import { server } from '../mocks/server';
 import React from 'react';
+
+/** Helper: render BooksPage inside a MemoryRouter (required for <Link>). */
+const renderPage = () =>
+  render(
+    <MemoryRouter>
+      <BooksPage />
+    </MemoryRouter>
+  );
 
 describe('BooksPage', () => {
   const books = [
@@ -43,13 +52,13 @@ describe('BooksPage', () => {
   });
 
   it('shows a loading skeleton while fetching', async () => {
-    render(<BooksPage />);
+    renderPage();
     expect(screen.getByTestId('books-loading')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId('books-loading')).not.toBeInTheDocument());
   });
 
   it('renders a list of books with title, author, genre and stock', async () => {
-    render(<BooksPage />);
+    renderPage();
     expect(await screen.findByText('Clean Code')).toBeInTheDocument();
     expect(screen.getByText('Robert C. Martin')).toBeInTheDocument();
     expect(screen.getByText('Programming')).toBeInTheDocument();
@@ -59,12 +68,22 @@ describe('BooksPage', () => {
     expect(screen.getByText('0')).toBeInTheDocument();
   });
 
+  it('renders book titles as links to the detail page', async () => {
+    renderPage();
+    const link = await screen.findByRole('link', { name: 'Clean Code' });
+    expect(link).toHaveAttribute('href', '/books/9780132350884');
+  });
+
   it('filters books by search input', async () => {
-    render(<BooksPage />);
+    renderPage();
+    await screen.findByText('Clean Code'); // wait for initial load
     const search = screen.getByPlaceholderText(/search/i);
     fireEvent.change(search, { target: { value: 'Clean' } });
-    expect(await screen.findByText('Clean Code')).toBeInTheDocument();
-    expect(screen.queryByText('Site Reliability Engineering')).not.toBeInTheDocument();
+    // Wait for debounce (300 ms) + fetch to settle
+    await waitFor(() =>
+      expect(screen.queryByText('Site Reliability Engineering')).not.toBeInTheDocument()
+    );
+    expect(screen.getByText('Clean Code')).toBeInTheDocument();
   });
 
   it('shows an error message if the API request fails', async () => {
@@ -73,7 +92,7 @@ describe('BooksPage', () => {
         HttpResponse.json({ error: 'Internal Server Error' }, { status: 500 })
       )
     );
-    render(<BooksPage />);
+    renderPage();
     const alert = await screen.findByRole('alert');
     expect(alert).toHaveTextContent(/error/i);
   });
@@ -84,9 +103,10 @@ describe('BooksPage', () => {
         HttpResponse.json({ items: [], total: 0, page: 1, page_size: 20 })
       )
     );
-    render(<BooksPage />);
+    renderPage();
     expect(await screen.findByText(/no books found/i)).toBeInTheDocument();
   });
 
   // Pagination test can be added here if pagination is implemented
 });
+

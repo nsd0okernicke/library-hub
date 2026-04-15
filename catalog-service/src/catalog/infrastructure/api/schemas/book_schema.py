@@ -36,6 +36,7 @@ class BookResponse(BaseModel):
         author: Full author name.
         genre: Genre or subject area.
         description: Optional free-text description.
+        available_count: Current available stock (None when not fetched).
     """
 
     model_config = {"from_attributes": True}
@@ -45,6 +46,7 @@ class BookResponse(BaseModel):
     author: str
     genre: str
     description: Optional[str] = None
+    available_count: Optional[int] = None
 
 
 class BooksListResponse(BaseModel):

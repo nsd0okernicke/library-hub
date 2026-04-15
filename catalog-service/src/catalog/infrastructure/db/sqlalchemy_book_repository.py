@@ -3,7 +3,7 @@ SQLAlchemy implementation of the BookRepository port.
 """
 from typing import Sequence
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from catalog.domain.book import Book
 from catalog.domain.isbn import Isbn
 from catalog.domain.ports.book_repository import BookRepository
@@ -101,6 +101,15 @@ class SqlAlchemyBookRepository(BookRepository):
             Tuple of (list of Book objects, total count).
         """
         stmt = select(BookModel)
+        or_filters = []
+        if title:
+            or_filters.append(BookModel.title.ilike(f"%{title}%"))
+        if author:
+            or_filters.append(BookModel.author.ilike(f"%{author}%"))
+        if genre:
+            or_filters.append(BookModel.genre.ilike(f"%{genre}%"))
+        if or_filters:
+            stmt = stmt.where(or_(*or_filters))
         result = await self._session.execute(stmt)
         models = result.scalars().all()
         books = [

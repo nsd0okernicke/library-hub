@@ -88,7 +88,7 @@ async def test_post_books_missing_fields_returns_422() -> None:
 
 @pytest.mark.asyncio
 async def test_get_book_by_isbn_returns_200() -> None:
-    """GET /books/{isbn} gibt 200 OK + Buchdaten zurück."""
+    """GET /books/{isbn} returns 200 OK with book data."""
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         await _create_book(ac)
         response = await ac.get(f"/books/{ISBN_VALID}")
@@ -96,6 +96,17 @@ async def test_get_book_by_isbn_returns_200() -> None:
     data = response.json()
     assert data["isbn"] == ISBN_VALID
     assert data["title"] == "Test Book"
+
+
+@pytest.mark.asyncio
+async def test_get_book_by_isbn_includes_available_count() -> None:
+    """GET /books/{isbn} includes available_count in the response."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        await _create_book(ac, initial_stock=4)
+        response = await ac.get(f"/books/{ISBN_VALID}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["available_count"] == 4
 
 
 @pytest.mark.asyncio

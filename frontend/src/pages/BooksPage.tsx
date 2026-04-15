@@ -1,14 +1,12 @@
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useBooks } from '@/hooks/useBooks';
 
 /** FE-1 – Book catalogue with search and filtering. */
 export default function BooksPage(): JSX.Element {
   const [search, setSearch] = useState('');
   const { books, loading, error } = useBooks(search);
-
-  // Filterung erfolgt im Backend-Mock, daher hier keine Filterung mehr
-  const filteredBooks = books;
 
   return (
     <ErrorBoundary>
@@ -24,8 +22,8 @@ export default function BooksPage(): JSX.Element {
         />
         {loading && <div data-testid="books-loading">Loading...</div>}
         {error && <div role="alert">Error: {error || 'An error occurred.'}</div>}
-        {!loading && !error && filteredBooks.length === 0 && <div>No books found</div>}
-        {!loading && !error && filteredBooks.length > 0 && (
+        {!loading && !error && books.length === 0 && <div>No books found</div>}
+        {!loading && !error && books.length > 0 && (
           <table className="w-full border-collapse">
             <thead>
               <tr>
@@ -36,12 +34,21 @@ export default function BooksPage(): JSX.Element {
               </tr>
             </thead>
             <tbody>
-              {filteredBooks.map(book => (
-                <tr key={book.isbn}>
-                  <td className="border-b p-2">{book.title}</td>
+              {books.map(book => (
+                <tr key={book.isbn} className="hover:bg-gray-50">
+                  <td className="border-b p-2">
+                    <Link
+                      to={`/books/${book.isbn}`}
+                      className="text-blue-600 hover:underline"
+                    >
+                      {book.title}
+                    </Link>
+                  </td>
                   <td className="border-b p-2">{book.author}</td>
                   <td className="border-b p-2">{book.genre}</td>
-                  <td className="border-b p-2">{book.available_count}</td>
+                  <td className="border-b p-2">
+                    {book.available_count != null ? book.available_count : '–'}
+                  </td>
                 </tr>
               ))}
             </tbody>

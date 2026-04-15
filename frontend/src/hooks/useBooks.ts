@@ -5,7 +5,7 @@ export interface Book {
   title: string;
   author: string;
   genre: string;
-  available_count: number;
+  available_count: number | null;
 }
 
 export function useBooks(query: string = ''): {
@@ -18,26 +18,32 @@ export function useBooks(query: string = ''): {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
-    fetch(`/api/catalog/books?q=${encodeURIComponent(query)}`)
-      .then(async (res) => {
-        if (!res.ok) {
-          let msg = 'Failed to fetch books';
-          try {
-            const data = await res.json();
-            if (data && data.error) msg = data.error;
-          } catch {}
-          throw new Error(msg);
-        }
-        return res.json();
-      })
-      .then((data) => setBooks(data.items || []))
-      .catch((e) => {
-        setBooks([]); // Leere die Bücherliste im Fehlerfall
-        setError(e.message);
-      })
-      .finally(() => setLoading(false));
+    const timer = setTimeout(() => {
+      setLoading(true);
+      setError(null);
+      fetch(`/api/catalog/books?q=${encodeURIComponent(query)}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            let msg = 'Failed to fetch books';
+            try {
+              const data = await res.json();
+              if (data && data.error) msg = data.error;
+            } catch {
+            // ignore JSON parse errors – use default message
+          }
+            throw new Error(msg);
+          }
+          return res.json();
+        })
+        .then((data) => setBooks(data.items || []))
+        .catch((e) => {
+          setBooks([]);
+          setError(e.message);
+        })
+        .finally(() => setLoading(false));
+    }, 300);
+
+    return () => clearTimeout(timer);
   }, [query]);
 
   return { books, loading, error };

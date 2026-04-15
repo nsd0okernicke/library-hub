@@ -1,5 +1,5 @@
 """Router for all /books-endpoints of Catalog Service."""
-from fastapi import APIRouter, status, HTTPException, Depends
+from fastapi import APIRouter, status, HTTPException, Depends, Query
 
 from catalog.application.add_book_use_case import AddBookUseCase
 from catalog.application.check_availability_use_case import CheckAvailabilityUseCase
@@ -55,27 +55,46 @@ def get_stock_repo() -> BookStockRepository:
     response_description="A list of all books in the catalogue.",
 )
 async def get_books(
+    q: str | None = Query(default=None, description="Search across title, author and genre"),
     book_repo: BookRepository = Depends(get_book_repo),
+    stock_repo: BookStockRepository = Depends(get_stock_repo),
 ) -> BooksListResponse:
-    """Return all books from the catalogue (CAT-1).
+    """Return books from the catalogue with optional full-text search (CAT-1).
+
+    Searches title, author and genre simultaneously (OR logic).
+
+    Args:
+        q: Optional search term applied to title, author and genre.
+        book_repo: Repository for book operations.
+        stock_repo: Repository for stock operations.
 
     Returns:
-        BooksListResponse containing all available books.
+        BooksListResponse containing matching books with available_count.
     """
-    use_case = SearchBooksUseCase(book_repo)
-    books, _ = await use_case.execute()
-    return BooksListResponse(
-        items=[
+    search_use_case = SearchBooksUseCase(book_repo)
+    books, _ = await search_use_case.execute(
+        title=q,
+        author=q,
+        genre=q,
+    )
+    availability_use_case = CheckAvailabilityUseCase(stock_repo)
+    items: list[BookResponse] = []
+    for book in books:
+        try:
+            count: int = await availability_use_case.execute(book.isbn)
+        except ValueError:
+            count = 0
+        items.append(
             BookResponse(
                 isbn=str(book.isbn),
                 title=book.title,
                 author=book.author,
                 genre=book.genre,
                 description=book.description,
+                available_count=count,
             )
-            for book in books
-        ]
-    )
+        )
+    return BooksListResponse(items=items)
 
 
 # ── POST /books ───────────────────────────────────────────────────────────────
@@ -227,15 +246,17 @@ async def return_book(
 async def get_book(
     isbn: str,
     book_repo: BookRepository = Depends(get_book_repo),
+    stock_repo: BookStockRepository = Depends(get_stock_repo),
 ) -> BookResponse:
-    """Return a single book by ISBN (CAT-5).
+    """Return a single book by ISBN including current availability (CAT-5).
 
     Args:
         isbn: ISBN string from the URL path.
         book_repo: Repository for book operations.
+        stock_repo: Repository for stock operations.
 
     Returns:
-        BookResponse with all book metadata.
+        BookResponse with all book metadata and available_count.
 
     Raises:
         HTTPException: 404 if the book was not found.
@@ -250,11 +271,16 @@ async def get_book(
         book = await use_case.execute(isbn_vo)
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    try:
+        count: int = await CheckAvailabilityUseCase(stock_repo).execute(isbn_vo)
+    except ValueError:
+        count = 0
     return BookResponse(
         isbn=str(book.isbn),
         title=book.title,
         author=book.author,
         genre=book.genre,
         description=book.description,
+        available_count=count,
     )
 

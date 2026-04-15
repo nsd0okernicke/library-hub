@@ -1,6 +1,7 @@
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { useSearchParams } from 'react-router-dom';
 import { useState } from 'react';
+import type { StoredUser } from '@/types';
 
 interface LoanResponse {
   status: string;
@@ -8,21 +9,28 @@ interface LoanResponse {
   user_id: string;
 }
 
+function getStoredUser(): StoredUser | null {
+  const raw = localStorage.getItem('user');
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StoredUser;
+  } catch {
+    return null;
+  }
+}
+
 /** FE-3 – New loan request form. */
 export default function NewLoanPage(): JSX.Element {
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const isbn = searchParams.get('isbn') || '';
-  const userRaw = localStorage.getItem('user');
-  const user = userRaw ? JSON.parse(userRaw) : null;
+  const isbn = searchParams.get('isbn') ?? '';
+  const user = getStoredUser();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setError(null);
-    setSuccess(false);
     if (!user) {
       setError('Please register or log in first.');
       return;
@@ -38,15 +46,14 @@ export default function NewLoanPage(): JSX.Element {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isbn, user_id: user.userId }),
       });
-      const data = await res.json();
+      const data = await res.json() as LoanResponse | { error?: string };
       if (!res.ok) {
-        setError(data.error || 'Request failed');
+        setError(('error' in data && data.error) ? data.error : 'Request failed');
       } else {
         setPending(true);
-        setSuccess(true);
       }
-    } catch (e: any) {
-      setError(e.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Network error');
     } finally {
       setLoading(false);
     }
@@ -88,7 +95,7 @@ export default function NewLoanPage(): JSX.Element {
             Request Loan
           </button>
         </form>
-        {pending && success && (
+        {pending && (
           <div className="mt-4 text-yellow-700">Pending – Your loan request is being processed.</div>
         )}
       </main>
