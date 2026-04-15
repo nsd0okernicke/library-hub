@@ -103,7 +103,8 @@ library-hub/
 │   │   │   ├── BookDetailPage.tsx
 │   │   │   ├── LoansPage.tsx
 │   │   │   ├── NewLoanPage.tsx
-│   │   │   └── AdminPage.tsx
+│   │   │   ├── AdminPage.tsx
+│   │   │   └── RegisterPage.tsx
 │   │   ├── lib/                       ← Utility functions, helpers
 │   │   │   ├── utils.ts
 │   │   │   └── formatters.ts
@@ -207,7 +208,9 @@ Configured in `package.json`:
 | `/books/:isbn` | `BookDetailPage` | Book details + availability + request loan |
 | `/loans` | `LoansPage` | All loans of the current user |
 | `/loans/new` | `NewLoanPage` | New loan request form |
+| `/register` | `RegisterPage` | New user registration form |
 | `/admin` | `AdminPage` | Overdue loans (admin view) |
+| `*` | `NotFoundPage` | 404 fallback for unknown routes |
 
 ---
 
@@ -298,8 +301,8 @@ React Testing Library.
 | Test type | Tool | What is tested |
 |-----------|------|----------------|
 | Unit tests (hooks) | Vitest + `@testing-library/react-hooks` | Data fetching logic, state transitions |
-| Component tests | Vitest + React Testing Library | Rendering, user interactions, conditional display |
-| Page tests | Vitest + RTL + MSW | Full page behaviour with mocked API responses |
+| Component tests | Vitest + React Testing Library + happy-dom | Rendering, user interactions, conditional display |
+| Page tests | Vitest + RTL + MSW + happy-dom | Full page behaviour with mocked API responses |
 | Accessibility tests | `jest-axe` | WCAG 2.1 AA violations caught automatically |
 
 **Testing principles:**
@@ -322,4 +325,3 @@ The frontend is configured as a **separate module** inside the existing IntelliJ
 6. ESLint: `Languages & Frameworks → JavaScript → Code Quality Tools → ESLint → Automatic ESLint configuration`
 7. Prettier: `Languages & Frameworks → JavaScript → Prettier → Automatic Prettier configuration`
 8. Vitest: add a **Vitest** run configuration pointing to `frontend/vitest.config.ts`
-
