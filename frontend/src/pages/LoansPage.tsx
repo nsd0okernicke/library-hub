@@ -1,10 +1,17 @@
+import { useState } from 'react';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { Toast } from '@/components/shared/Toast';
 import { LoanStatusBadge } from '@/components/loans/LoanStatusBadge';
 import { useLoans } from '@/hooks/useLoans';
 import { formatDate } from '@/lib/formatters';
 import type { StoredUser } from '@/types';
 
 const STORAGE_KEY = 'user';
+
+interface ToastState {
+  message: string;
+  type: 'success' | 'error';
+}
 
 function getStoredUser(): StoredUser | null {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -16,10 +23,21 @@ function getStoredUser(): StoredUser | null {
   }
 }
 
-/** FE-4 – Loans list for the current user. */
+/** FE-4 / FE-5 – Loans list for the current user with return action. */
 export default function LoansPage(): JSX.Element {
   const user = getStoredUser();
-  const { loans, loading, error } = useLoans(user?.userId ?? null);
+  const { loans, loading, error, returnLoan } = useLoans(user?.userId ?? null);
+  const [toast, setToast] = useState<ToastState | null>(null);
+
+  const handleReturn = async (loanId: string): Promise<void> => {
+    try {
+      await returnLoan(loanId);
+      setToast({ message: 'Book returned successfully!', type: 'success' });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Failed to return loan';
+      setToast({ message: msg, type: 'error' });
+    }
+  };
 
   if (!user) {
     return (
@@ -73,6 +91,7 @@ export default function LoansPage(): JSX.Element {
                     {loan.status === 'ACTIVE' && (
                       <button
                         type="button"
+                        onClick={() => { void handleReturn(loan.loan_id); }}
                         className="rounded bg-red-600 px-3 py-1 text-sm text-white hover:bg-red-700"
                       >
                         Return
@@ -85,8 +104,14 @@ export default function LoansPage(): JSX.Element {
           </table>
         )}
       </main>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onDismiss={() => setToast(null)}
+        />
+      )}
     </ErrorBoundary>
   );
 }
-
-

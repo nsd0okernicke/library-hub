@@ -10,6 +10,7 @@ export function useLoans(userId: string | null): {
   loading: boolean;
   error: string | null;
   refresh: () => void;
+  returnLoan: (loanId: string) => Promise<void>;
 } {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -49,6 +50,24 @@ export function useLoans(userId: string | null): {
       .finally(() => setLoading(false));
   }, [userId, refreshTick]);
 
-  return { loans, loading, error, refresh };
-}
+  /**
+   * Calls POST /api/loan/loans/:loanId/return, then refreshes the loan list.
+   * Throws an Error with the API error message on failure.
+   */
+  const returnLoan = useCallback(async (loanId: string): Promise<void> => {
+    const res = await fetch(`/api/loan/loans/${loanId}/return`, { method: 'POST' });
+    if (!res.ok) {
+      let msg = 'Failed to return loan';
+      try {
+        const data = await res.json() as { error?: string };
+        if (data.error) msg = data.error;
+      } catch {
+        // ignore JSON parse errors
+      }
+      throw new Error(msg);
+    }
+    refresh();
+  }, [refresh]);
 
+  return { loans, loading, error, refresh, returnLoan };
+}

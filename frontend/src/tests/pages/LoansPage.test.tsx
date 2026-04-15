@@ -1,4 +1,5 @@
-﻿import { render, screen } from '@testing-library/react';
+﻿import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import LoansPage from '@/pages/LoansPage';
 import { http, HttpResponse } from 'msw';
@@ -89,5 +90,97 @@ describe('LoansPage', () => {
     );
     renderLoansPage();
     expect(await screen.findByRole('alert')).toBeInTheDocument();
+  });
+});
+
+// ─── FE-5: Return a Book ──────────────────────────────────────────────────────
+
+describe('LoansPage – Return a Book (FE-5)', () => {
+  const activeLoans: Loan[] = [
+    {
+      loan_id: 'l-001',
+      isbn: '9780132350884',
+      user_id: 'u-abc-123',
+      status: 'ACTIVE',
+      due_date: '2026-05-15',
+      returned_at: null,
+    },
+  ];
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it('calls POST /api/loan/loans/:id/return when Return is clicked', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+    let returnCalled = false;
+    server.use(
+      http.get('/api/loan/loans', () =>
+        HttpResponse.json({ items: activeLoans, total: 1, page: 1, page_size: 20 })
+      ),
+      http.post('/api/loan/loans/:loanId/return', () => {
+        returnCalled = true;
+        return HttpResponse.json({}, { status: 200 });
+      })
+    );
+    renderLoansPage();
+    await screen.findByText('9780132350884');
+    await userEvent.click(screen.getByRole('button', { name: /return/i }));
+    await waitFor(() => expect(returnCalled).toBe(true));
+  });
+
+  it('shows a success toast after returning a book', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+    server.use(
+      http.get('/api/loan/loans', () =>
+        HttpResponse.json({ items: activeLoans, total: 1, page: 1, page_size: 20 })
+      ),
+      http.post('/api/loan/loans/:loanId/return', () =>
+        HttpResponse.json({}, { status: 200 })
+      )
+    );
+    renderLoansPage();
+    await screen.findByText('9780132350884');
+    await userEvent.click(screen.getByRole('button', { name: /return/i }));
+    expect(await screen.findByText(/returned successfully/i)).toBeInTheDocument();
+  });
+
+  it('updates the loan list after a successful return', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+    let callCount = 0;
+    const returnedLoans: Loan[] = [{ ...activeLoans[0]!, status: 'RETURNED', returned_at: '2026-04-15' }];
+    server.use(
+      http.get('/api/loan/loans', () => {
+        callCount += 1;
+        const items = callCount === 1 ? activeLoans : returnedLoans;
+        return HttpResponse.json({ items, total: items.length, page: 1, page_size: 20 });
+      }),
+      http.post('/api/loan/loans/:loanId/return', () =>
+        HttpResponse.json({}, { status: 200 })
+      )
+    );
+    renderLoansPage();
+    await screen.findByText('9780132350884');
+    await userEvent.click(screen.getByRole('button', { name: /return/i }));
+    // After refresh the Return button should be gone (loan is now RETURNED)
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: /return/i })).not.toBeInTheDocument()
+    );
+  });
+
+  it('shows an error toast when the return fails with 409 Conflict', async () => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mockUser));
+    server.use(
+      http.get('/api/loan/loans', () =>
+        HttpResponse.json({ items: activeLoans, total: 1, page: 1, page_size: 20 })
+      ),
+      http.post('/api/loan/loans/:loanId/return', () =>
+        HttpResponse.json({ error: 'Loan already returned' }, { status: 409 })
+      )
+    );
+    renderLoansPage();
+    await screen.findByText('9780132350884');
+    await userEvent.click(screen.getByRole('button', { name: /return/i }));
+    expect(await screen.findByText(/already returned/i)).toBeInTheDocument();
   });
 });
