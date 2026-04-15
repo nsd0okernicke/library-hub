@@ -18,6 +18,9 @@ export interface Loan {
   returned_at: string | null;
 }
 
+/** An overdue loan as returned by GET /loans/overdue. */
+export type OverdueLoan = Loan;
+
 /** Generic paginated API response envelope. */
 export interface PaginatedResponse<T> {
   items: T[];
@@ -25,5 +28,6 @@ export interface PaginatedResponse<T> {
   page: number;
   page_size: number;
 }
+
 
 
