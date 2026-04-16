@@ -3,7 +3,6 @@ import { MemoryRouter } from 'react-router-dom';
 import BooksPage from '@/pages/BooksPage';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
-import React from 'react';
 
 /** Helper: render BooksPage inside a MemoryRouter (required for <Link>). */
 const renderPage = () =>

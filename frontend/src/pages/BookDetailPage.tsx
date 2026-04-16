@@ -12,7 +12,7 @@ interface BookDetail {
 }
 
 /** FE-2 – Book detail with availability and loan request. */
-export default function BookDetailPage(): JSX.Element {
+export default function BookDetailPage(): JSX.Element | null {
   const { isbn } = useParams();
   const navigate = useNavigate();
   const [book, setBook] = useState<BookDetail | null>(null);
