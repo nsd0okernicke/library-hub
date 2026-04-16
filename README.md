@@ -256,8 +256,8 @@ uv run pytest tests/ --ignore=tests/integration
 
 | Service | Tests | Coverage |
 |---------|-------|----------|
-| Catalog | 105 ✅ | 100 % |
-| Loan    | 129 ✅ | 99 % |
+| Catalog | 106 ✅ | 98 % |
+| Loan    | 133 ✅ | 99 % |
 
 ### Frontend
 
@@ -282,7 +282,7 @@ bash mutmut.sh loan
 | Service | Mutation Score |
 |---------|---------------|
 | Catalog | 100 % (120/120 killed) |
-| Loan    | 100 % (139/139 killed) |
+| Loan    | 100 % (142/142 killed) |
 
 ---
 
