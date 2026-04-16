@@ -33,8 +33,6 @@ export const handlers = [
     HttpResponse.json(null, { status: 404 })
   ),
   http.get('/api/loan/loans/overdue', () =>
-    HttpResponse.json([])
+    HttpResponse.json({ items: [] })
   ),
 ];
-
-

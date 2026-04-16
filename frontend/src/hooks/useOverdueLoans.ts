@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import type { OverdueLoan } from '@/types';
 
+interface OverdueLoansResponse {
+  items: OverdueLoan[];
+}
+
 /**
  * Fetches all currently overdue loans from the Loan Service.
  * A loan is overdue when due_date < today and status is ACTIVE.
@@ -29,9 +33,9 @@ export function useOverdueLoans(): {
           }
           throw new Error(msg);
         }
-        return res.json() as Promise<OverdueLoan[]>;
+        return res.json() as Promise<OverdueLoansResponse>;
       })
-      .then((data) => setLoans(data))
+      .then((data) => setLoans(data.items ?? []))
       .catch((e: Error) => {
         setLoans([]);
         setError(e.message);
@@ -41,4 +45,3 @@ export function useOverdueLoans(): {
 
   return { loans, loading, error };
 }
-

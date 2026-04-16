@@ -38,7 +38,7 @@ describe("AdminPage", () => {
   });
   it("renders each overdue loan with user ID, ISBN and formatted due date", async () => {
     server.use(
-      http.get("/api/loan/loans/overdue", () => HttpResponse.json(mockOverdueLoans))
+      http.get("/api/loan/loans/overdue", () => HttpResponse.json({ items: mockOverdueLoans }))
     );
     renderAdminPage();
     expect(await screen.findByText("user-123")).toBeInTheDocument();
@@ -50,7 +50,7 @@ describe("AdminPage", () => {
   });
   it("displays a positive days-overdue number for past due dates", async () => {
     server.use(
-      http.get("/api/loan/loans/overdue", () => HttpResponse.json(mockOverdueLoans))
+      http.get("/api/loan/loans/overdue", () => HttpResponse.json({ items: mockOverdueLoans }))
     );
     renderAdminPage();
     await screen.findByText("user-123");
@@ -62,7 +62,7 @@ describe("AdminPage", () => {
   });
   it("highlights days overdue in red when greater than 0", async () => {
     server.use(
-      http.get("/api/loan/loans/overdue", () => HttpResponse.json(mockOverdueLoans))
+      http.get("/api/loan/loans/overdue", () => HttpResponse.json({ items: mockOverdueLoans }))
     );
     const { container } = renderAdminPage();
     await screen.findByText("user-123");
@@ -80,7 +80,7 @@ describe("AdminPage", () => {
   });
   it("shows a loading state initially", () => {
     server.use(
-      http.get("/api/loan/loans/overdue", () => HttpResponse.json(mockOverdueLoans))
+      http.get("/api/loan/loans/overdue", () => HttpResponse.json({ items: mockOverdueLoans }))
     );
     renderAdminPage();
     expect(screen.getByText(/loading/i)).toBeInTheDocument();
