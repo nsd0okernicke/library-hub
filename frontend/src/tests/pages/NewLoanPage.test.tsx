@@ -1,42 +1,43 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+﻿import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import NewLoanPage from '@/pages/NewLoanPage';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
+import { UserProvider } from '@/hooks/useUser';
 
 const mockUser = { userId: 'u123', name: 'Test User', email: 'test@example.com' };
 const mockIsbn = '9780132350884';
+
+function renderPage(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <UserProvider>
+        <Routes>
+          <Route path="/loans/new" element={<NewLoanPage />} />
+        </Routes>
+      </UserProvider>
+    </MemoryRouter>
+  );
+}
 
 describe('NewLoanPage', () => {
   afterEach(() => {
     localStorage.clear();
   });
 
-  it('zeigt eine Fehlermeldung, wenn kein User eingeloggt ist', async () => {
-    render(
-      <MemoryRouter initialEntries={[`/loans/new?isbn=${mockIsbn}`]}>
-        <Routes>
-          <Route path="/loans/new" element={<NewLoanPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+  it('shows an error message when no user is logged in', async () => {
+    renderPage(`/loans/new?isbn=${mockIsbn}`);
     expect(await screen.findByText(/please register/i)).toBeInTheDocument();
   });
 
-  it('validiert, dass isbn und user_id vorhanden sind', async () => {
+  it('validates that isbn is present', async () => {
     localStorage.setItem('user', JSON.stringify(mockUser));
-    render(
-      <MemoryRouter initialEntries={[`/loans/new`]}>
-        <Routes>
-          <Route path="/loans/new" element={<NewLoanPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    renderPage('/loans/new');
     fireEvent.click(screen.getByRole('button', { name: /request loan/i }));
     expect(await screen.findByText(/isbn is required/i)).toBeInTheDocument();
   });
 
-  it('sendet eine Loan-Anfrage und zeigt Pending-Bestätigung', async () => {
+  it('submits a loan request and shows success confirmation', async () => {
     localStorage.setItem('user', JSON.stringify(mockUser));
     server.use(
       http.post('/api/loan/loans', async ({ request }) => {
@@ -47,31 +48,19 @@ describe('NewLoanPage', () => {
         );
       })
     );
-    render(
-      <MemoryRouter initialEntries={[`/loans/new?isbn=${mockIsbn}`]}>
-        <Routes>
-          <Route path="/loans/new" element={<NewLoanPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    renderPage(`/loans/new?isbn=${mockIsbn}`);
     fireEvent.click(screen.getByRole('button', { name: /request loan/i }));
-    expect(await screen.findByText(/pending/i)).toBeInTheDocument();
+    expect(await screen.findByText(/loan requested successfully/i)).toBeInTheDocument();
   });
 
-  it('zeigt einen Fehler, wenn die API 422 zurückgibt', async () => {
+  it('shows an error when the API returns 422', async () => {
     localStorage.setItem('user', JSON.stringify(mockUser));
     server.use(
       http.post('/api/loan/loans', () =>
         HttpResponse.json({ error: 'Already loaned' }, { status: 422 })
       )
     );
-    render(
-      <MemoryRouter initialEntries={[`/loans/new?isbn=${mockIsbn}`]}>
-        <Routes>
-          <Route path="/loans/new" element={<NewLoanPage />} />
-        </Routes>
-      </MemoryRouter>
-    );
+    renderPage(`/loans/new?isbn=${mockIsbn}`);
     fireEvent.click(screen.getByRole('button', { name: /request loan/i }));
     expect(await screen.findByText(/already loaned/i)).toBeInTheDocument();
   });

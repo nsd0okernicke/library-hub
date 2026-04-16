@@ -1,41 +1,61 @@
 # LibraryHub 📚
 
-A realistic, event-driven library management system built with Python – designed as a learning project for **hexagonal architecture**, **microservices**, and **modern Python best practices**.
+A realistic, event-driven library management system built with Python and React – designed as a learning project for **hexagonal architecture**, **microservices**, **TDD** and **modern full-stack best practices**.
 
 ---
 
 ## What is LibraryHub?
 
-LibraryHub lets library users search for books, request loans and return them. Behind the scenes two independent microservices coordinate via asynchronous messaging (RabbitMQ) – no direct service-to-service calls.
+LibraryHub lets library users search for books, request loans and return them. A **React SPA** provides the user interface, while two independent Python microservices coordinate via asynchronous messaging (RabbitMQ) – no direct service-to-service calls.
 
 ```
-┌─────────────────────┐        RabbitMQ        ┌──────────────────────┐
-│   Catalog Service   │ ◄───────────────────── │    Loan Service      │
-│                     │                         │                      │
-│  • Book catalogue   │ ──────────────────────► │  • Loan lifecycle    │
-│  • Stock tracking   │   BookReserved /         │  • User management   │
-│  • REST API :8000   │   BookOutOfStock         │  • REST API :8001    │
-└─────────────────────┘                         └──────────────────────┘
-        │                                                  │
-   PostgreSQL                                         PostgreSQL
-  (catalog_db)                                        (loan_db)
+┌──────────────────────────┐
+│   React Frontend :3000   │  (Vite dev server with proxy)
+│   TypeScript + Tailwind  │
+└────────┬────────┬─────────┘
+         │        │
+    /api/catalog  /api/loan
+         │        │
+┌────────▼──────┐  ┌────────▼──────────┐        RabbitMQ
+│ Catalog Svc   │  │   Loan Service    │ ◄──────────────────►
+│ :8000         │  │   :8001           │
+│ Books + Stock │  │ Loans + Users     │
+└───────────────┘  └───────────────────┘
+       │                    │
+  PostgreSQL           PostgreSQL
+ (catalog_db)          (loan_db)
 ```
 
 ---
 
 ## Tech Stack
 
+### Backend
+
 | Layer         | Technology                              |
 |---------------|-----------------------------------------|
 | Language      | Python 3.11+                            |
 | API           | FastAPI + Uvicorn                       |
 | Database      | PostgreSQL (one DB per service)         |
-| ORM           | SQLAlchemy 2.0 async + Alembic          |
+| ORM           | SQLAlchemy 2.0 async                    |
 | Messaging     | RabbitMQ + aio-pika                     |
 | Package mgr   | [uv](https://github.com/astral-sh/uv)  |
 | Testing       | pytest + pytest-asyncio + Testcontainers|
 | Coverage      | pytest-cov (target: > 90 %)            |
 | Mutation test | mutmut                                  |
+
+### Frontend
+
+| Layer         | Technology                              |
+|---------------|-----------------------------------------|
+| Framework     | React 18 (Hooks only)                   |
+| Language      | TypeScript 5 (`strict` mode)            |
+| Build tool    | Vite 5                                  |
+| Routing       | React Router v6                         |
+| Styling       | Tailwind CSS v3                         |
+| Forms         | React Hook Form + Zod                   |
+| Testing       | Vitest + React Testing Library + MSW v2 |
+| Package mgr   | npm                                     |
 
 ---
 
@@ -55,9 +75,19 @@ library-hub/
 │   │   ├── application/
 │   │   └── infrastructure/
 │   └── tests/
+├── frontend/                 # React SPA
+│   ├── src/
+│   │   ├── components/       # Reusable UI components (NavBar, Toast, …)
+│   │   ├── hooks/            # Custom hooks (useBooks, useLoans, useUser, …)
+│   │   ├── pages/            # One component per route
+│   │   ├── types/            # Shared TypeScript types
+│   │   └── App.tsx           # Router + layout setup
+│   └── tests/                # Vitest + RTL + MSW tests
 ├── docs/
-│   ├── concept.md            # Architecture & big picture
-│   └── requirements.md       # Functional & non-functional requirements
+│   ├── concept.md            # Backend architecture & big picture
+│   ├── requirements.md       # Backend functional & non-functional requirements
+│   ├── frontend-concept.md   # Frontend architecture & patterns
+│   └── frontend-requirements.md  # Frontend user stories & requirements
 └── docker-compose.yml        # Local infrastructure (PostgreSQL + RabbitMQ)
 ```
 
@@ -68,6 +98,7 @@ library-hub/
 ### Prerequisites
 
 - Python 3.11+
+- Node.js 20 LTS+
 - [uv](https://github.com/astral-sh/uv) — install once globally:
   ```bash
   pip install uv
@@ -109,7 +140,7 @@ uv sync
 
 ---
 
-### 3 — Start the services
+### 3 — Start the backend services
 
 Open two terminals:
 
@@ -129,7 +160,27 @@ DB tables are created automatically on first startup (no Alembic migration neede
 
 ---
 
-### 4 — Explore the APIs
+### 4 — Start the frontend
+
+```bash
+# Terminal 3 – React SPA (port 3000)
+cd frontend
+npm install   # first time only
+npm run dev
+```
+
+Open → http://localhost:3000
+
+The Vite dev server proxies all API calls automatically – no CORS configuration needed:
+
+| Prefix | Forwarded to |
+|--------|-------------|
+| `/api/catalog/*` | http://localhost:8000 |
+| `/api/loan/*`    | http://localhost:8001 |
+
+---
+
+### 5 — Explore the APIs
 
 | Service | Swagger UI | ReDoc |
 |---------|-----------|-------|
@@ -138,7 +189,7 @@ DB tables are created automatically on first startup (no Alembic migration neede
 
 ---
 
-### 5 — Load sample data (optional)
+### 6 — Load sample data (optional)
 
 ```bash
 docker exec -i libraryhub-catalog-db \
@@ -147,6 +198,20 @@ docker exec -i libraryhub-catalog-db \
 ```
 
 This inserts 10 real books with valid ISBNs and stock counts.
+
+---
+
+## Frontend Pages
+
+| Route | Page | Description |
+|-------|------|-------------|
+| `/` | Book Catalogue | Browse all books, search by title / author / genre |
+| `/books/:isbn` | Book Detail | Full metadata, availability, request loan button |
+| `/loans/new` | New Loan | Request a loan (pre-filled ISBN from detail page) |
+| `/loans` | My Loans | All loans for the logged-in user, return action |
+| `/login` | Login | Sign in with your e-mail address |
+| `/register` | Register | Create a new account |
+| `/admin` | Admin | View all overdue loans |
 
 ---
 
@@ -177,6 +242,8 @@ POST /loans/{id}/return  (Loan Service)
 
 ## Running the Tests
 
+### Backend
+
 ```bash
 # Catalog Service – unit + API tests
 cd catalog-service
@@ -187,14 +254,24 @@ cd loan-service
 uv run pytest tests/ --ignore=tests/integration
 ```
 
-Current status:
-
 | Service | Tests | Coverage |
 |---------|-------|----------|
 | Catalog | 105 ✅ | 100 % |
-| Loan    | 124 ✅ | 99 % |
+| Loan    | 129 ✅ | 99 % |
 
-### Mutation Testing
+### Frontend
+
+```bash
+cd frontend
+npm test -- --run        # run once
+npm test                 # watch mode
+```
+
+| | Tests | 
+|-|-------|
+| Frontend | 53 ✅ |
+
+### Mutation Testing (Backend)
 
 ```bash
 # From the repository root (requires WSL)
@@ -211,7 +288,7 @@ bash mutmut.sh loan
 
 ## Architecture
 
-Both services follow **Hexagonal Architecture (Ports & Adapters)**:
+### Backend – Hexagonal Architecture (Ports & Adapters)
 
 ```
 ┌──────────────────────────────────────────────────┐
@@ -230,18 +307,32 @@ Both services follow **Hexagonal Architecture (Ports & Adapters)**:
 - **Application** – use cases that orchestrate domain objects via ports
 - **Infrastructure** – adapters: FastAPI, SQLAlchemy repositories, RabbitMQ publisher/consumer
 
+### Frontend – Layered Architecture
+
+```
+┌──────────────────────────────────────┐
+│         NavBar + pages/              │  ← routing & page layout
+├──────────────────────────────────────┤
+│            components/               │  ← pure UI, no data fetching
+├──────────────────────────────────────┤
+│              hooks/                  │  ← all data fetching & mutations
+├──────────────────────────────────────┤
+│           fetch() / MSW              │  ← raw HTTP via Vite proxy
+└──────────────────────────────────────┘
+```
+
 ---
 
 ## Development Workflow (TDD)
 
-Every feature follows the strict Red → Green → Refactor → Mutate cycle:
+Every feature – backend and frontend – follows the strict Red → Green → Refactor cycle:
 
 | Phase | Description |
 |-------|-------------|
 | 🔴 **RED** | Write tests first – they must **fail** before any implementation exists |
 | 🟢 **GREEN** | Write the minimal implementation to make tests pass |
 | 🔵 **REFACTOR** | Clean up code – tests stay green, no new behaviour added |
-| 🧬 **MUTATE** | Run `mutmut` – mutation score must stay ≥ 80 % for `domain/` and `application/` |
+| 🧬 **MUTATE** | Run `mutmut` – mutation score must stay ≥ 80 % for backend `domain/` and `application/` |
 
 ---
 
@@ -270,8 +361,7 @@ Key settings:
 
 Full architecture and requirements are documented in [`/docs`](docs/):
 
-- [`docs/concept.md`](docs/concept.md) – Architecture decisions, development strategy, step-by-step plan
-- [`docs/requirements.md`](docs/requirements.md) – Functional & non-functional requirements, tech stack
-
-
-
+- [`docs/concept.md`](docs/concept.md) – Backend architecture decisions, development strategy
+- [`docs/requirements.md`](docs/requirements.md) – Backend functional & non-functional requirements
+- [`docs/frontend-concept.md`](docs/frontend-concept.md) – Frontend architecture, patterns, tech decisions
+- [`docs/frontend-requirements.md`](docs/frontend-requirements.md) – Frontend user stories & acceptance criteria

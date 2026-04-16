@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import LoansPage from '@/pages/LoansPage';
 import { http, HttpResponse } from 'msw';
 import { server } from '../mocks/server';
+import { UserProvider } from '@/hooks/useUser';
 import type { Loan } from '@/types';
 const STORAGE_KEY = 'user';
 const mockUser = { userId: 'u-abc-123', name: 'Alice', email: 'alice@example.com' };
@@ -36,7 +37,9 @@ const mockLoans: Loan[] = [
 function renderLoansPage(): ReturnType<typeof render> {
   return render(
     <MemoryRouter>
-      <LoansPage />
+      <UserProvider>
+        <LoansPage />
+      </UserProvider>
     </MemoryRouter>
   );
 }

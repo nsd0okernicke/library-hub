@@ -1,33 +1,23 @@
-import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
-import { useSearchParams } from 'react-router-dom';
+﻿import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import type { StoredUser } from '@/types';
-
+import { useUser } from '@/hooks/useUser';
 interface LoanResponse {
   status: string;
   isbn: string;
   user_id: string;
 }
-
-function getStoredUser(): StoredUser | null {
-  const raw = localStorage.getItem('user');
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StoredUser;
-  } catch {
-    return null;
-  }
-}
-
+const REDIRECT_DELAY_MS = 1500;
 /** FE-3 – New loan request form. */
 export default function NewLoanPage(): JSX.Element {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const isbn = searchParams.get('isbn') ?? '';
-  const user = getStoredUser();
-
+  const isbnFromUrl = searchParams.get('isbn') ?? '';
+  const [isbn, setIsbn] = useState(isbnFromUrl);
+  const { user } = useUser();
   const handleSubmit = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
     setError(null);
@@ -50,7 +40,8 @@ export default function NewLoanPage(): JSX.Element {
       if (!res.ok) {
         setError(('error' in data && data.error) ? data.error : 'Request failed');
       } else {
-        setPending(true);
+        setSubmitted(true);
+        setTimeout(() => { navigate('/loans'); }, REDIRECT_DELAY_MS);
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Network error');
@@ -58,7 +49,6 @@ export default function NewLoanPage(): JSX.Element {
       setLoading(false);
     }
   };
-
   if (!user) {
     return (
       <ErrorBoundary>
@@ -69,12 +59,23 @@ export default function NewLoanPage(): JSX.Element {
       </ErrorBoundary>
     );
   }
-
+  if (submitted) {
+    return (
+      <ErrorBoundary>
+        <main className="mx-auto max-w-lg px-4 py-8">
+          <h1 className="mb-6 text-2xl font-bold">Request a Loan</h1>
+          <p className="text-green-600 font-medium">
+            ✓ Loan requested successfully! Redirecting to your loans…
+          </p>
+        </main>
+      </ErrorBoundary>
+    );
+  }
   return (
     <ErrorBoundary>
       <main className="mx-auto max-w-lg px-4 py-8">
         <h1 className="mb-6 text-2xl font-bold">Request a Loan</h1>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={(e) => { void handleSubmit(e); }}>
           <div className="mb-4">
             <label htmlFor="isbn" className="block mb-1">ISBN</label>
             <input
@@ -82,22 +83,21 @@ export default function NewLoanPage(): JSX.Element {
               name="isbn"
               type="text"
               value={isbn}
-              readOnly
-              className="w-full rounded border px-3 py-2 bg-gray-100"
+              readOnly={!!isbnFromUrl}
+              onChange={(e) => setIsbn(e.target.value)}
+              placeholder="e.g. 978-3-16-148410-0"
+              className={`w-full rounded border px-3 py-2 ${isbnFromUrl ? 'bg-gray-100' : 'focus:outline-none focus:ring-2 focus:ring-blue-500'}`}
             />
           </div>
           {error && <div role="alert" className="mb-2 text-red-600">{error}</div>}
           <button
             type="submit"
             disabled={loading}
-            className="rounded bg-blue-600 px-4 py-2 text-white disabled:bg-gray-400"
+            className="rounded bg-blue-600 px-4 py-2 text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors"
           >
-            Request Loan
+            {loading ? 'Requesting…' : 'Request Loan'}
           </button>
         </form>
-        {pending && (
-          <div className="mt-4 text-yellow-700">Pending – Your loan request is being processed.</div>
-        )}
       </main>
     </ErrorBoundary>
   );

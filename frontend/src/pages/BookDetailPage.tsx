@@ -81,7 +81,8 @@ export default function BookDetailPage(): JSX.Element {
         <button
           type="button"
           disabled={book.available_count === 0}
-          className="rounded bg-blue-600 px-4 py-2 text-white disabled:bg-gray-400"
+          onClick={() => navigate(`/loans/new?isbn=${encodeURIComponent(book.isbn)}`)}
+          className="rounded bg-blue-600 px-4 py-2 text-white disabled:bg-gray-400 hover:bg-blue-700 transition-colors"
         >
           Request Loan
         </button>

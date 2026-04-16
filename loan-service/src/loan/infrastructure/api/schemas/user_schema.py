@@ -8,11 +8,11 @@ from pydantic import BaseModel
 
 
 class UserRequest(BaseModel):
-    """Schema für eingehende Nutzer-Requests (POST /users).
+    """Schema for incoming user requests (POST /users).
 
     Attributes:
-        name: Vollständiger Name des Nutzers.
-        email: Eindeutige E-Mail-Adresse.
+        name: Full name of the user.
+        email: Unique e-mail address.
     """
 
     name: str
@@ -20,12 +20,12 @@ class UserRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """Schema für ausgehende Nutzer-Antworten.
+    """Schema for outgoing user responses.
 
     Attributes:
-        id: UUID des Nutzers.
-        name: Vollständiger Name des Nutzers.
-        email: E-Mail-Adresse.
+        id: UUID of the user.
+        name: Full name of the user.
+        email: E-mail address.
     """
 
     id: uuid.UUID

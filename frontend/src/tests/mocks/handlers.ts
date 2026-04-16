@@ -29,8 +29,12 @@ export const handlers = [
   http.post('/api/loan/users', () =>
     HttpResponse.json({}, { status: 201 })
   ),
+  http.get('/api/loan/users', () =>
+    HttpResponse.json(null, { status: 404 })
+  ),
   http.get('/api/loan/loans/overdue', () =>
     HttpResponse.json([])
   ),
 ];
+
 

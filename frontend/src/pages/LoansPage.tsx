@@ -3,29 +3,17 @@ import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { Toast } from '@/components/shared/Toast';
 import { LoanStatusBadge } from '@/components/loans/LoanStatusBadge';
 import { useLoans } from '@/hooks/useLoans';
+import { useUser } from '@/hooks/useUser';
 import { formatDate } from '@/lib/formatters';
-import type { StoredUser } from '@/types';
-
-const STORAGE_KEY = 'user';
 
 interface ToastState {
   message: string;
   type: 'success' | 'error';
 }
 
-function getStoredUser(): StoredUser | null {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
-  try {
-    return JSON.parse(raw) as StoredUser;
-  } catch {
-    return null;
-  }
-}
-
 /** FE-4 / FE-5 – Loans list for the current user with return action. */
 export default function LoansPage(): JSX.Element {
-  const user = getStoredUser();
+  const { user } = useUser();
   const { loans, loading, error, returnLoan } = useLoans(user?.userId ?? null);
   const [toast, setToast] = useState<ToastState | null>(null);
 
@@ -115,3 +103,4 @@ export default function LoansPage(): JSX.Element {
     </ErrorBoundary>
   );
 }
+
