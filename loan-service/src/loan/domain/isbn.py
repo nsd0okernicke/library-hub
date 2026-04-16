@@ -38,9 +38,7 @@ class Isbn:
         digits = value.replace("-", "")
 
         if not digits.replace("X", "").isdigit():
-            raise ValueError(
-                f"ISBN '{value}' contains invalid characters"
-            )
+            raise ValueError(f"ISBN '{value}' contains invalid characters")
 
         if len(digits) == 13:
             _validate_isbn13(digits)
@@ -84,13 +82,9 @@ class Isbn:
 
 def _validate_isbn13(digits: str) -> None:
     """Validate an ISBN-13 check digit (ISO 2108)."""
-    total = sum(
-        int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits)
-    )
+    total = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits))
     if total % 10 != 0:
-        raise ValueError(
-            f"ISBN-13 '{digits}' has an invalid check digit (sum={total})"
-        )
+        raise ValueError(f"ISBN-13 '{digits}' has an invalid check digit (sum={total})")
 
 
 def _validate_isbn10(digits: str) -> None:
@@ -100,7 +94,4 @@ def _validate_isbn10(digits: str) -> None:
         value = 10 if char.upper() == "X" else int(char)
         total += value * (i + 1)
     if total % 11 != 0:
-        raise ValueError(
-            f"ISBN-10 '{digits}' has an invalid check digit (sum={total})"
-        )
-
+        raise ValueError(f"ISBN-10 '{digits}' has an invalid check digit (sum={total})")

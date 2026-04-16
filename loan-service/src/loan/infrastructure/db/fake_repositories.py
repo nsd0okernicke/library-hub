@@ -2,12 +2,12 @@
 
 For tests and local development only – not for production use.
 """
+
 from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
 from datetime import date
-from typing import Dict
 
 from loan.domain.loan import Loan
 from loan.domain.ports.loan_repository import LoanRepository
@@ -20,7 +20,7 @@ class InMemoryLoanRepository(LoanRepository):
     """In-memory implementation of the LoanRepository port."""
 
     def __init__(self) -> None:
-        self._store: Dict[uuid.UUID, Loan] = {}
+        self._store: dict[uuid.UUID, Loan] = {}
 
     async def save(self, loan: Loan) -> None:
         """Store a loan in the in-memory store."""
@@ -38,16 +38,18 @@ class InMemoryLoanRepository(LoanRepository):
         page_size: int = 20,
     ) -> tuple[Sequence[Loan], int]:
         """Return all loans for a given user."""
-        items = [l for l in self._store.values() if l.user_id == user_id]
+        items = [loan for loan in self._store.values() if loan.user_id == user_id]
         return items, len(items)
 
     async def find_overdue(self) -> Sequence[Loan]:
         """Return all overdue active loans."""
         from loan.domain.loan_status import LoanStatus
+
         today = date.today()
         return [
-            l for l in self._store.values()
-            if l.status == LoanStatus.ACTIVE and l.due_date < today
+            loan
+            for loan in self._store.values()
+            if loan.status == LoanStatus.ACTIVE and loan.due_date < today
         ]
 
 
@@ -55,8 +57,8 @@ class InMemoryUserRepository(UserRepository):
     """In-memory implementation of the UserRepository port."""
 
     def __init__(self) -> None:
-        self._store: Dict[uuid.UUID, User] = {}
-        self._emails: Dict[str, uuid.UUID] = {}
+        self._store: dict[uuid.UUID, User] = {}
+        self._emails: dict[str, uuid.UUID] = {}
 
     async def save(self, user: User) -> None:
         """Store a user in the in-memory store."""
@@ -86,4 +88,3 @@ class InMemoryMessagePublisher(MessagePublisher):
     async def publish(self, routing_key: str, payload: dict) -> None:
         """Store routing key and payload in the in-memory list."""
         self.published.append({"routing_key": routing_key, "payload": payload})
-

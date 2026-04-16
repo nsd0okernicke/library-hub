@@ -33,11 +33,8 @@ class RegisterUserUseCase:
             ValueError: If the e-mail is already registered.
         """
         if await self._user_repo.exists_by_email(email):
-            raise ValueError(
-                f"A user with email '{email}' already exists"
-            )
+            raise ValueError(f"A user with email '{email}' already exists")
 
         user = User(name=name, email=email)
         await self._user_repo.save(user)
         return user
-

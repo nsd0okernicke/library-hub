@@ -3,6 +3,7 @@
 Logs published messages instead of sending them to RabbitMQ.
 Replace with a real RabbitMQ adapter when the messaging infrastructure is ready.
 """
+
 from __future__ import annotations
 
 import json
@@ -32,4 +33,3 @@ class LoggingMessagePublisher(MessagePublisher):
             routing_key,
             json.dumps(payload, default=str),
         )
-

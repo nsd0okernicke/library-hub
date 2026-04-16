@@ -54,4 +54,3 @@ class UserRepository(ABC):
         Returns:
             True if registered, False otherwise.
         """
-

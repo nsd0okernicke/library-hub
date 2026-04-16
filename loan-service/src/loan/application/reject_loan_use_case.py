@@ -42,4 +42,3 @@ class RejectLoanUseCase:
         loan.reject()
         await self._loan_repo.save(loan)
         return loan
-

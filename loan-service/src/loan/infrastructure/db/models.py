@@ -1,4 +1,5 @@
 """SQLAlchemy ORM models for Loan and User."""
+
 from sqlalchemy import Column, Date, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase
@@ -29,4 +30,3 @@ class LoanModel(Base):
     status = Column(String, nullable=False)
     due_date = Column(Date, nullable=False)
     returned_at = Column(Date, nullable=True)
-

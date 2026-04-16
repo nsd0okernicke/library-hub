@@ -2,6 +2,7 @@
 
 Separates request and response schemas following Clean Architecture.
 """
+
 import uuid
 
 from pydantic import BaseModel
@@ -31,4 +32,3 @@ class UserResponse(BaseModel):
     id: uuid.UUID
     name: str
     email: str
-

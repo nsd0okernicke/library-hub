@@ -36,4 +36,3 @@ class GetBookUseCase:
         if book is None:
             raise ValueError(f"No book found for ISBN {isbn}")
         return book
-

@@ -1,12 +1,16 @@
 """
 SQLAlchemy implementation of the BookRepository port.
 """
-from typing import Sequence
+
+from collections.abc import Sequence
+
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, or_
+
 from catalog.domain.book import Book
 from catalog.domain.isbn import Isbn
 from catalog.domain.ports.book_repository import BookRepository
+
 from .models import BookModel
 
 

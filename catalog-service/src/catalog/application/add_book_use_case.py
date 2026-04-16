@@ -60,9 +60,7 @@ class AddBookUseCase:
             ValueError: If the ISBN is already in the catalogue.
         """
         if await self._book_repo.exists(isbn):
-            raise ValueError(
-                f"Book with ISBN {isbn} already exists in the catalogue"
-            )
+            raise ValueError(f"Book with ISBN {isbn} already exists in the catalogue")
 
         book = Book(
             isbn=isbn,
@@ -77,4 +75,3 @@ class AddBookUseCase:
         await self._stock_repo.save(stock)
 
         return book
-

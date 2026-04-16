@@ -1,4 +1,5 @@
 """Router for all /loans endpoints of the Loan Service."""
+
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -23,6 +24,7 @@ router = APIRouter()
 
 # ── Dependency functions ──────────────────────────────────────────────────────
 
+
 def get_loan_repo() -> LoanRepository:
     """FastAPI dependency: provides a LoanRepository per request.
 
@@ -32,7 +34,9 @@ def get_loan_repo() -> LoanRepository:
     Raises:
         RuntimeError: If no override has been registered.
     """
-    raise RuntimeError("get_loan_repo must be overridden via dependency_overrides")  # pragma: no cover
+    raise RuntimeError(
+        "get_loan_repo must be overridden via dependency_overrides"
+    )  # pragma: no cover
 
 
 def get_publisher() -> MessagePublisher:
@@ -44,10 +48,13 @@ def get_publisher() -> MessagePublisher:
     Raises:
         RuntimeError: If no override has been registered.
     """
-    raise RuntimeError("get_publisher must be overridden via dependency_overrides")  # pragma: no cover
+    raise RuntimeError(
+        "get_publisher must be overridden via dependency_overrides"
+    )  # pragma: no cover
 
 
 # ── GET /loans ────────────────────────────────────────────────────────────────
+
 
 @router.get(
     "/loans",
@@ -98,6 +105,7 @@ async def get_loans(
 
 # ── POST /loans ───────────────────────────────────────────────────────────────
 
+
 @router.post(
     "/loans",
     response_model=LoanResponse,
@@ -132,6 +140,7 @@ async def create_loan(
 
 
 # ── GET /loans/overdue ────────────────────────────────────────────────────────
+
 
 @router.get(
     "/loans/overdue",
@@ -168,6 +177,7 @@ async def get_overdue_loans(
 
 
 # ── GET /loans/{loan_id} ──────────────────────────────────────────────────────
+
 
 @router.get(
     "/loans/{loan_id}",
@@ -208,6 +218,7 @@ async def get_loan(
 
 
 # ── POST /loans/{loan_id}/return ──────────────────────────────────────────────
+
 
 @router.post(
     "/loans/{loan_id}/return",
@@ -253,4 +264,3 @@ async def return_loan(
         due_date=loan.due_date,
         returned_at=loan.returned_at,
     )
-

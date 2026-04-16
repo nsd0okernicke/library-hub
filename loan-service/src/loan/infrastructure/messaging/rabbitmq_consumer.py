@@ -4,6 +4,7 @@ Consumes:
   - book.reserved       →  ActivateLoanUseCase
   - book.out_of_stock   →  RejectLoanUseCase
 """
+
 from __future__ import annotations
 
 import json
@@ -34,7 +35,9 @@ class RabbitmqConsumer:
         self._activate = activate_use_case
         self._reject = reject_use_case
 
-    async def handle_message(self, message: aio_pika.abc.AbstractIncomingMessage) -> None:
+    async def handle_message(
+        self, message: aio_pika.abc.AbstractIncomingMessage
+    ) -> None:
         """Decode and dispatch an incoming RabbitMQ message.
 
         Acks the message on success, nacks (no requeue) on any error.
@@ -52,7 +55,9 @@ class RabbitmqConsumer:
             elif routing_key == "book.out_of_stock":
                 await self._reject.execute(loan_id=loan_id)
             else:
-                logger.warning("Loan consumer: unknown routing key '%s' – ignored", routing_key)
+                logger.warning(
+                    "Loan consumer: unknown routing key '%s' – ignored", routing_key
+                )
 
             await message.ack()
 
@@ -63,4 +68,3 @@ class RabbitmqConsumer:
                 exc,
             )
             await message.nack(requeue=False)
-

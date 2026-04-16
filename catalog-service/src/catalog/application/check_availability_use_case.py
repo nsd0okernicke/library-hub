@@ -35,4 +35,3 @@ class CheckAvailabilityUseCase:
         if stock is None:
             raise ValueError(f"No stock found for ISBN {isbn}")
         return stock.available_count
-

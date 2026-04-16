@@ -111,9 +111,7 @@ def _validate_isbn13(digits: str) -> None:
     Raises:
         ValueError: If the check digit is wrong.
     """
-    total = sum(
-        int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits)
-    )
+    total = sum(int(d) * (1 if i % 2 == 0 else 3) for i, d in enumerate(digits))
     if total % 10 != 0:
         raise ValueError(
             f"ISBN-13 '{digits}' has an invalid check digit "
@@ -142,4 +140,3 @@ def _validate_isbn10(digits: str) -> None:
             f"ISBN-10 '{digits}' has an invalid check digit "
             f"(weighted sum={total}, expected multiple of 11)"
         )
-

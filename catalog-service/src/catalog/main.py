@@ -1,8 +1,8 @@
 """Catalog Service – FastAPI application entry point."""
 
-from contextlib import asynccontextmanager
-from collections.abc import AsyncGenerator
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 import aio_pika
 from fastapi import Depends, FastAPI
@@ -13,13 +13,19 @@ from catalog.application.return_book_use_case import ReturnBookUseCase
 from catalog.infrastructure.api.routers.books_router import (
     get_book_repo,
     get_stock_repo,
+)
+from catalog.infrastructure.api.routers.books_router import (
     router as books_router,
 )
 from catalog.infrastructure.config.settings import get_settings
 from catalog.infrastructure.db.models import Base
-from catalog.infrastructure.db.session import engine, get_session, AsyncSessionLocal
-from catalog.infrastructure.db.sqlalchemy_book_repository import SqlAlchemyBookRepository
-from catalog.infrastructure.db.sqlalchemy_book_stock_repository import SqlAlchemyBookStockRepository
+from catalog.infrastructure.db.session import AsyncSessionLocal, engine, get_session
+from catalog.infrastructure.db.sqlalchemy_book_repository import (
+    SqlAlchemyBookRepository,
+)
+from catalog.infrastructure.db.sqlalchemy_book_stock_repository import (
+    SqlAlchemyBookStockRepository,
+)
 from catalog.infrastructure.messaging.rabbitmq_consumer import RabbitmqConsumer
 from catalog.infrastructure.messaging.rabbitmq_publisher import RabbitmqPublisher
 
@@ -27,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no cover
@@ -46,15 +53,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
             aio_pika.ExchangeType.TOPIC,
             durable=True,
         )
-        publisher = RabbitmqPublisher(exchange=exchange, exchange_name=settings.rabbitmq_exchange)
+        publisher = RabbitmqPublisher(
+            exchange=exchange, exchange_name=settings.rabbitmq_exchange
+        )
 
         # Consumer: use a per-message session factory so each message gets its own DB session
-        async def _handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
+        async def _handle_message(
+            message: aio_pika.abc.AbstractIncomingMessage,
+        ) -> None:
             async with AsyncSessionLocal() as session:
                 stock_repo = SqlAlchemyBookStockRepository(session)
-                reserve_uc = ReserveBookUseCase(stock_repo=stock_repo, publisher=publisher)
+                reserve_uc = ReserveBookUseCase(
+                    stock_repo=stock_repo, publisher=publisher
+                )
                 return_uc = ReturnBookUseCase(stock_repo=stock_repo)
-                consumer = RabbitmqConsumer(reserve_use_case=reserve_uc, return_use_case=return_uc)
+                consumer = RabbitmqConsumer(
+                    reserve_use_case=reserve_uc, return_use_case=return_uc
+                )
                 await consumer.handle_message(message)
 
         for queue_name, routing_key in [
@@ -71,8 +86,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
         logger.info("Catalog: RabbitMQ connection closed")
 
     except Exception as exc:
-        logger.warning("Catalog: RabbitMQ not available – running without messaging: %s", exc)
+        logger.warning(
+            "Catalog: RabbitMQ not available – running without messaging: %s", exc
+        )
         yield
+
 
 # ── Application ───────────────────────────────────────────────────────────────
 
@@ -114,6 +132,7 @@ app = FastAPI(
 
 # ── Production dependency overrides ──────────────────────────────────────────
 
+
 def _prod_book_repo(  # pragma: no cover
     session: AsyncSession = Depends(get_session),
 ) -> SqlAlchemyBookRepository:
@@ -137,6 +156,7 @@ app.include_router(books_router, tags=["books"])
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
+
 
 @app.get(
     "/health",

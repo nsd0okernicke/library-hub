@@ -72,4 +72,3 @@ class ReserveBookUseCase:
                     "isbn": str(isbn),
                 },
             )
-

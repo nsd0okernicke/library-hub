@@ -38,4 +38,3 @@ class ListLoansUseCase:
         return await self._loan_repo.find_by_user_id(
             user_id, page=page, page_size=page_size
         )
-

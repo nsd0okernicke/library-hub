@@ -2,11 +2,12 @@
 
 For development and testing only – not for production use.
 """
+
 from collections.abc import Sequence
-from typing import Dict
+
 from catalog.domain.book import Book
-from catalog.domain.isbn import Isbn
 from catalog.domain.book_stock import BookStock
+from catalog.domain.isbn import Isbn
 from catalog.domain.ports.book_repository import BookRepository
 from catalog.domain.ports.book_stock_repository import BookStockRepository
 
@@ -15,7 +16,7 @@ class InMemoryBookRepository(BookRepository):
     """In-memory fake implementation of the BookRepository port."""
 
     def __init__(self) -> None:
-        self._books: Dict[str, Book] = {}
+        self._books: dict[str, Book] = {}
 
     async def save(self, book: Book) -> None:
         self._books[str(book.isbn)] = book
@@ -43,7 +44,7 @@ class InMemoryBookStockRepository(BookStockRepository):
     """In-memory fake implementation of the BookStockRepository port."""
 
     def __init__(self) -> None:
-        self._stocks: Dict[str, BookStock] = {}
+        self._stocks: dict[str, BookStock] = {}
 
     async def save(self, stock: BookStock) -> None:
         self._stocks[str(stock.isbn)] = stock

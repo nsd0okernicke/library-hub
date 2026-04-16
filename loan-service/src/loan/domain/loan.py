@@ -49,9 +49,7 @@ class Loan:
             ValueError: If current status is not PENDING.
         """
         if self.status != LoanStatus.PENDING:
-            raise ValueError(
-                f"Invalid status transition: {self.status.value} → ACTIVE"
-            )
+            raise ValueError(f"Invalid status transition: {self.status.value} → ACTIVE")
         self.status = LoanStatus.ACTIVE
 
     def reject(self) -> None:
@@ -75,9 +73,7 @@ class Loan:
             ValueError: If current status is not ACTIVE.
         """
         if self.status == LoanStatus.RETURNED:
-            raise ValueError(
-                "Invalid status transition: already returned"
-            )
+            raise ValueError("Invalid status transition: already returned")
         if self.status != LoanStatus.ACTIVE:
             raise ValueError(
                 f"Invalid status transition: {self.status.value} → RETURNED "

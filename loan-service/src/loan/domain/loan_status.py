@@ -24,4 +24,3 @@ class LoanStatus(StrEnum):
     ACTIVE = "ACTIVE"
     RETURNED = "RETURNED"
     REJECTED = "REJECTED"
-

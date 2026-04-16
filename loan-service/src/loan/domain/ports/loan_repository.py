@@ -60,4 +60,3 @@ class LoanRepository(ABC):
         Returns:
             Sequence of overdue Loan entities.
         """
-

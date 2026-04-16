@@ -40,4 +40,3 @@ class ReturnBookUseCase:
         stock.return_book()
         await self._stock_repo.save(stock)
         return stock
-

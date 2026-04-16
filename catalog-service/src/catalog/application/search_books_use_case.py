@@ -45,4 +45,3 @@ class SearchBooksUseCase:
             page=page,
             page_size=page_size,
         )
-

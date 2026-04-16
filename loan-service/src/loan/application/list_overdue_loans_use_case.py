@@ -24,4 +24,3 @@ class ListOverdueLoansUseCase:
             Sequence of Loan entities where status=ACTIVE and due_date < today.
         """
         return await self._loan_repo.find_overdue()
-

@@ -72,4 +72,3 @@ class BookRepository(ABC):
         Returns:
             True if the book exists, False otherwise.
         """
-

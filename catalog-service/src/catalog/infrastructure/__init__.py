@@ -6,4 +6,3 @@ Contains all technical adapter implementations:
 - api/        FastAPI routers and Pydantic schemas
 - config/     pydantic-settings configuration
 """
-

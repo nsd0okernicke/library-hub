@@ -57,4 +57,3 @@ class BookStock:
             None
         """
         self.available_count += 1
-

@@ -45,4 +45,3 @@ class Book:
     def __repr__(self) -> str:
         """Human-readable representation."""
         return f"Book(isbn={self.isbn!r}, title={self.title!r})"
-

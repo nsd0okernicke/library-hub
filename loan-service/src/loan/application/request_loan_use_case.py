@@ -68,4 +68,3 @@ class RequestLoanUseCase:
         )
 
         return loan
-

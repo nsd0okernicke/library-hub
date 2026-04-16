@@ -1,5 +1,6 @@
 """Router for all /books-endpoints of Catalog Service."""
-from fastapi import APIRouter, status, HTTPException, Depends, Query
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from catalog.application.add_book_use_case import AddBookUseCase
 from catalog.application.check_availability_use_case import CheckAvailabilityUseCase
@@ -12,14 +13,15 @@ from catalog.domain.ports.book_stock_repository import BookStockRepository
 from catalog.infrastructure.api.schemas.book_schema import (
     BookRequest,
     BookResponse,
-    BookStockResponse,
     BooksListResponse,
+    BookStockResponse,
 )
 
 router = APIRouter()
 
 
 # ── Dependency functions ──────────────────────────────────────────────────────
+
 
 def get_book_repo() -> BookRepository:
     """FastAPI dependency: provides a BookRepository per request.
@@ -48,6 +50,7 @@ def get_stock_repo() -> BookStockRepository:
 
 # ── GET /books ────────────────────────────────────────────────────────────────
 
+
 @router.get(
     "/books",
     response_model=BooksListResponse,
@@ -55,7 +58,9 @@ def get_stock_repo() -> BookStockRepository:
     response_description="A list of all books in the catalogue.",
 )
 async def get_books(
-    q: str | None = Query(default=None, description="Search across title, author and genre"),
+    q: str | None = Query(
+        default=None, description="Search across title, author and genre"
+    ),
     book_repo: BookRepository = Depends(get_book_repo),
     stock_repo: BookStockRepository = Depends(get_stock_repo),
 ) -> BooksListResponse:
@@ -98,6 +103,7 @@ async def get_books(
 
 
 # ── POST /books ───────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/books",
@@ -150,6 +156,7 @@ async def create_book(
 # NOTE: Must be registered BEFORE GET /books/{isbn} so that Starlette matches
 # the more specific route first (routes are matched in definition order).
 
+
 @router.get(
     "/books/{isbn}/availability",
     response_model=BookStockResponse,
@@ -180,7 +187,9 @@ async def get_availability(
     try:
         isbn_vo = Isbn(isbn)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     use_case = CheckAvailabilityUseCase(stock_repo)
     try:
         count = await use_case.execute(isbn_vo)
@@ -190,6 +199,7 @@ async def get_availability(
 
 
 # ── POST /books/{isbn}/return ─────────────────────────────────────────────────
+
 
 @router.post(
     "/books/{isbn}/return",
@@ -221,7 +231,9 @@ async def return_book(
     try:
         isbn_vo = Isbn(isbn)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     use_case = ReturnBookUseCase(stock_repo)
     try:
         stock = await use_case.execute(isbn=isbn_vo)
@@ -232,6 +244,7 @@ async def return_book(
 
 # ── GET /books/{isbn} ─────────────────────────────────────────────────────────
 # NOTE: Must be registered AFTER /books/{isbn}/availability and /books/{isbn}/return.
+
 
 @router.get(
     "/books/{isbn}",
@@ -265,7 +278,9 @@ async def get_book(
     try:
         isbn_vo = Isbn(isbn)
     except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e)
+        )
     use_case = GetBookUseCase(book_repo)
     try:
         book = await use_case.execute(isbn_vo)
@@ -283,4 +298,3 @@ async def get_book(
         description=book.description,
         available_count=count,
     )
-

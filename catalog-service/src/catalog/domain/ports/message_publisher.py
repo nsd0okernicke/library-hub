@@ -26,4 +26,3 @@ class MessagePublisher(ABC):
                 ``event_type``, ``version``, and ``occurred_at``
                 (see requirements.md §8).
         """
-

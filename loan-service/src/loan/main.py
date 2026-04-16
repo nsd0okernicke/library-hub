@@ -1,8 +1,8 @@
 """Loan Service – FastAPI application entry point."""
 
-from contextlib import asynccontextmanager
-from collections.abc import AsyncGenerator
 import logging
+from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 import aio_pika
 from fastapi import Depends, FastAPI
@@ -13,15 +13,19 @@ from loan.application.reject_loan_use_case import RejectLoanUseCase
 from loan.infrastructure.api.routers.loans_router import (
     get_loan_repo,
     get_publisher,
+)
+from loan.infrastructure.api.routers.loans_router import (
     router as loans_router,
 )
 from loan.infrastructure.api.routers.users_router import (
     get_user_repo,
+)
+from loan.infrastructure.api.routers.users_router import (
     router as users_router,
 )
 from loan.infrastructure.config.settings import get_settings
 from loan.infrastructure.db.models import Base
-from loan.infrastructure.db.session import engine, get_session, AsyncSessionLocal
+from loan.infrastructure.db.session import AsyncSessionLocal, engine, get_session
 from loan.infrastructure.db.sqlalchemy_loan_repository import SqlAlchemyLoanRepository
 from loan.infrastructure.db.sqlalchemy_user_repository import SqlAlchemyUserRepository
 from loan.infrastructure.messaging.logging_publisher import LoggingMessagePublisher
@@ -32,6 +36,7 @@ logger = logging.getLogger(__name__)
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no cover
@@ -59,12 +64,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
         app.dependency_overrides[get_publisher] = lambda: real_publisher
 
         # Consumer: use a per-message session factory so each message gets its own DB session
-        async def _handle_message(message: aio_pika.abc.AbstractIncomingMessage) -> None:
+        async def _handle_message(
+            message: aio_pika.abc.AbstractIncomingMessage,
+        ) -> None:
             async with AsyncSessionLocal() as session:
                 loan_repo = SqlAlchemyLoanRepository(session)
                 activate_uc = ActivateLoanUseCase(loan_repo=loan_repo)
                 reject_uc = RejectLoanUseCase(loan_repo=loan_repo)
-                consumer = RabbitmqConsumer(activate_use_case=activate_uc, reject_use_case=reject_uc)
+                consumer = RabbitmqConsumer(
+                    activate_use_case=activate_uc, reject_use_case=reject_uc
+                )
                 await consumer.handle_message(message)
 
         for queue_name, routing_key in [
@@ -81,7 +90,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # pragma: no co
         logger.info("Loan: RabbitMQ connection closed")
 
     except Exception as exc:
-        logger.warning("Loan: RabbitMQ not available – running without messaging: %s", exc)
+        logger.warning(
+            "Loan: RabbitMQ not available – running without messaging: %s", exc
+        )
         yield
 
 
@@ -136,6 +147,7 @@ app.include_router(users_router, tags=["users"])
 
 # ── Production dependency overrides ──────────────────────────────────────────
 
+
 def _prod_user_repo(  # pragma: no cover
     session: AsyncSession = Depends(get_session),
 ) -> SqlAlchemyUserRepository:
@@ -161,6 +173,7 @@ app.dependency_overrides[get_publisher] = _prod_publisher
 
 
 # ── Health ────────────────────────────────────────────────────────────────────
+
 
 @app.get(
     "/health",

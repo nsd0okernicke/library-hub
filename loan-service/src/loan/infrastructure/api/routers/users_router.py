@@ -1,4 +1,5 @@
 """Router for all /users endpoints of the Loan Service."""
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from loan.application.get_user_by_email_use_case import GetUserByEmailUseCase
@@ -11,6 +12,7 @@ router = APIRouter()
 
 # ── Dependency functions ──────────────────────────────────────────────────────
 
+
 def get_user_repo() -> UserRepository:
     """FastAPI dependency: provides a UserRepository per request.
 
@@ -20,10 +22,13 @@ def get_user_repo() -> UserRepository:
     Raises:
         RuntimeError: If no override has been registered.
     """
-    raise RuntimeError("get_user_repo must be overridden via dependency_overrides")  # pragma: no cover
+    raise RuntimeError(
+        "get_user_repo must be overridden via dependency_overrides"
+    )  # pragma: no cover
 
 
 # ── POST /users ───────────────────────────────────────────────────────────────
+
 
 @router.post(
     "/users",
@@ -59,6 +64,7 @@ async def create_user(
 
 # ── GET /users ────────────────────────────────────────────────────────────────
 
+
 @router.get(
     "/users",
     response_model=UserResponse,
@@ -88,5 +94,3 @@ async def get_user_by_email(
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     return UserResponse(id=user.id, name=user.name, email=user.email)
-
-

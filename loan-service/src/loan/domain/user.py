@@ -48,4 +48,3 @@ class User:
     def __repr__(self) -> str:
         """Human-readable representation."""
         return f"User(id={self.id!r}, email={self.email!r})"
-

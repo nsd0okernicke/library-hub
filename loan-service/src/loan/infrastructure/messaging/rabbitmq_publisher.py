@@ -1,4 +1,5 @@
 """RabbitMQ publisher adapter for the Loan Service."""
+
 from __future__ import annotations
 
 import json
@@ -17,7 +18,9 @@ class RabbitmqPublisher(MessagePublisher):
         exchange_name: Name of the exchange (used for logging only).
     """
 
-    def __init__(self, exchange: aio_pika.abc.AbstractExchange, exchange_name: str) -> None:
+    def __init__(
+        self, exchange: aio_pika.abc.AbstractExchange, exchange_name: str
+    ) -> None:
         self._exchange = exchange
         self._exchange_name = exchange_name
 
@@ -34,4 +37,3 @@ class RabbitmqPublisher(MessagePublisher):
             content_type="application/json",
         )
         await self._exchange.publish(message, routing_key=routing_key)
-

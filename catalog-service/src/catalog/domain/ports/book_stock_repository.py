@@ -32,4 +32,3 @@ class BookStockRepository(ABC):
         Returns:
             The matching BookStock, or None if not found.
         """
-

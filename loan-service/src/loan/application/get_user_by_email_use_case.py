@@ -1,4 +1,5 @@
 """Use case: retrieve a user by e-mail address (Loan Service)."""
+
 from loan.domain.ports.user_repository import UserRepository
 from loan.domain.user import User
 
@@ -29,4 +30,3 @@ class GetUserByEmailUseCase:
         if user is None:
             raise ValueError(f"No user found for e-mail: {email}")
         return user
-

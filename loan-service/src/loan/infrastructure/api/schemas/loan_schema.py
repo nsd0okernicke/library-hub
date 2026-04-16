@@ -2,9 +2,9 @@
 
 Separates request and response schemas following Clean Architecture.
 """
+
 import uuid
 from datetime import date
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -50,7 +50,7 @@ class LoanDetailResponse(BaseModel):
     user_id: uuid.UUID
     status: str
     due_date: date
-    returned_at: Optional[date] = None
+    returned_at: date | None = None
 
 
 class LoansListResponse(BaseModel):
@@ -61,4 +61,3 @@ class LoansListResponse(BaseModel):
     """
 
     items: list
-

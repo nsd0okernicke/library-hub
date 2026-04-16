@@ -2,7 +2,6 @@
 
 Separates request and response schemas following Clean Architecture.
 """
-from typing import Optional
 
 from pydantic import BaseModel
 
@@ -24,7 +23,7 @@ class BookRequest(BaseModel):
     author: str
     genre: str
     initial_stock: int
-    description: Optional[str] = None
+    description: str | None = None
 
 
 class BookResponse(BaseModel):
@@ -45,8 +44,8 @@ class BookResponse(BaseModel):
     title: str
     author: str
     genre: str
-    description: Optional[str] = None
-    available_count: Optional[int] = None
+    description: str | None = None
+    available_count: int | None = None
 
 
 class BooksListResponse(BaseModel):

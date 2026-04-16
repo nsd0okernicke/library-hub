@@ -42,4 +42,3 @@ class ActivateLoanUseCase:
         loan.activate()
         await self._loan_repo.save(loan)
         return loan
-

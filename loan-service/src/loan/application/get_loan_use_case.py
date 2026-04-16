@@ -37,4 +37,3 @@ class GetLoanUseCase:
         if loan is None:
             raise ValueError(f"Loan {loan_id} not found")
         return loan
-

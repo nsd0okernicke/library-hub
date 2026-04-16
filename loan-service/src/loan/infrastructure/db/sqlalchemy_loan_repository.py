@@ -1,4 +1,5 @@
 """SQLAlchemy implementation of the LoanRepository port (Loan Service)."""
+
 from __future__ import annotations
 
 import uuid

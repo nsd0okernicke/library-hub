@@ -41,4 +41,3 @@ def get_settings() -> Settings:
         A fully initialised Settings object.
     """
     return Settings()
-

@@ -1,5 +1,6 @@
 """SQLAlchemy ORM models for Book and BookStock."""
-from sqlalchemy import Column, String, Integer
+
+from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import declarative_base
 

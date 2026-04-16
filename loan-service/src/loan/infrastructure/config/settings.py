@@ -26,9 +26,7 @@ class Settings(BaseSettings):
         case_sensitive=False,
     )
 
-    database_url: str = (
-        "postgresql+asyncpg://postgres:password@localhost:5432/loan_db"
-    )
+    database_url: str = "postgresql+asyncpg://postgres:password@localhost:5432/loan_db"
     rabbitmq_url: str = "amqp://guest:guest@localhost:5672/"
     rabbitmq_exchange: str = "library.events"
     rabbitmq_queue_book_reserved: str = "loan.book-reserved"
@@ -43,4 +41,3 @@ def get_settings() -> Settings:
         A fully initialised Settings object.
     """
     return Settings()
-

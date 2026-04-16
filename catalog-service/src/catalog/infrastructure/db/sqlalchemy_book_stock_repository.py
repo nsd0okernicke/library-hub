@@ -4,11 +4,14 @@ SQLAlchemy implementation of the BookStockRepository port.
 Handles persistence for BookStock objects using SQLAlchemy (async) and
 maps between ORM models and domain objects.
 """
-from sqlalchemy.ext.asyncio import AsyncSession
+
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from catalog.domain.book_stock import BookStock
 from catalog.domain.isbn import Isbn
 from catalog.domain.ports.book_stock_repository import BookStockRepository
+
 from .models import BookStockModel
 
 
