@@ -1,0 +1,83 @@
+# ── Seed Job: loads seed_books.sql into catalog_db after the DB is ready ──────
+# Run manually after infra is up:  kubectl apply -f k8s/apps/seed-job.yaml
+# Check logs:                       kubectl logs job/catalog-seed
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: catalog-seed
+spec:
+  ttlSecondsAfterFinished: 300   # auto-cleanup after 5 minutes
+  template:
+    spec:
+      restartPolicy: OnFailure
+      initContainers:
+        # Wait until catalog-db is accepting connections before running psql
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - |
+              until pg_isready -h catalog-db -U catalog -d catalog_db; do
+                echo "Waiting for catalog-db..."; sleep 2;
+              done
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: libraryhub-secrets
+                  key: catalog-db-password
+      containers:
+        - name: seed
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - psql -h catalog-db -U catalog -d catalog_db -f /seed/seed_books.sql
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: libraryhub-secrets
+                  key: catalog-db-password
+          volumeMounts:
+            - name: seed-sql
+              mountPath: /seed
+      volumes:
+        - name: seed-sql
+          configMap:
+            name: catalog-seed-sql
+---
+# The SQL file itself is stored in a ConfigMap so the Job can access it
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalog-seed-sql
+data:
+  seed_books.sql: |
+    INSERT INTO books (isbn, title, author, genre, description) VALUES
+      ('9780132350884', 'Clean Code',                        'Robert C. Martin',     'Software Engineering', 'A handbook of agile software craftsmanship.'),
+      ('9780134494166', 'Clean Architecture',                'Robert C. Martin',     'Software Engineering', 'A craftsman''s guide to software structure and design.'),
+      ('9780201633610', 'Design Patterns',                   'Gang of Four',         'Software Engineering', 'Elements of reusable object-oriented software.'),
+      ('9780596517748', 'JavaScript: The Good Parts',        'Douglas Crockford',    'Programming',          'Unearthing the excellence in JavaScript.'),
+      ('9781491950357', 'Python Fluente',                    'Luciano Ramalho',      'Programming',          'Clear, concise and effective Python programming.'),
+      ('9780134685991', 'Effective Java',                    'Joshua Bloch',         'Programming',          'Best practices for the Java platform.'),
+      ('9780321125217', 'Domain-Driven Design',              'Eric Evans',           'Software Engineering', 'Tackling complexity in the heart of software.'),
+      ('9780062301239', 'The Hard Thing About Hard Things',  'Ben Horowitz',         'Business',             'Building a business when there are no easy answers.'),
+      ('9780743273565', 'The Great Gatsby',                  'F. Scott Fitzgerald',  'Fiction',              'A story of the fabulously wealthy Jay Gatsby.'),
+      ('9780451524935', 'Nineteen Eighty-Four',              'George Orwell',        'Fiction',              'A dystopian novel set in a totalitarian society.')
+    ON CONFLICT (isbn) DO NOTHING;
+
+    INSERT INTO book_stock (isbn, available_count) VALUES
+      ('9780132350884', 12),
+      ('9780134494166',  8),
+      ('9780201633610',  6),
+      ('9780596517748',  5),
+      ('9781491950357', 10),
+      ('9780134685991',  7),
+      ('9780321125217',  4),
+      ('9780062301239',  9),
+      ('9780743273565', 15),
+      ('9780451524935', 14)
+    ON CONFLICT (isbn) DO UPDATE SET available_count = EXCLUDED.available_count;
+

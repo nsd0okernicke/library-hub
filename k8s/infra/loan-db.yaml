@@ -1,0 +1,80 @@
+# ── loan-db: PostgreSQL for Loan Service ──────────────────────────────────────
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: loan-db-pvc
+  namespace: default
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loan-db
+  namespace: default
+  labels:
+    app: loan-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loan-db
+  template:
+    metadata:
+      labels:
+        app: loan-db
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: libraryhub-secrets
+                  key: loan-db-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: libraryhub-secrets
+                  key: loan-db-password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: libraryhub-secrets
+                  key: loan-db-name
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "loan", "-d", "loan_db"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "loan", "-d", "loan_db"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: loan-db-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loan-db
+  namespace: default
+spec:
+  selector:
+    app: loan-db
+  ports:
+    - port: 5432
+      targetPort: 5432
+

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: libraryhub-config
+data:
+  # Catalog Service
+  CATALOG_DATABASE_URL: "postgresql+asyncpg://catalog:password@catalog-db:5432/catalog_db"
+  CATALOG_RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+  CATALOG_RABBITMQ_EXCHANGE: "library.events"
+  CATALOG_RABBITMQ_QUEUE_LOAN_REQUESTED: "catalog.loan-requested"
+  CATALOG_RABBITMQ_QUEUE_BOOK_RETURNED: "catalog.book-returned"
+  # Loan Service
+  LOAN_DATABASE_URL: "postgresql+asyncpg://loan:password@loan-db:5432/loan_db"
+  LOAN_RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+  LOAN_RABBITMQ_EXCHANGE: "library.events"
+  LOAN_RABBITMQ_QUEUE_BOOK_RESERVED: "loan.book-reserved"
+  LOAN_RABBITMQ_QUEUE_BOOK_OUT_OF_STOCK: "loan.book-out-of-stock"
+  LOAN_DURATION_DAYS: "28"
+

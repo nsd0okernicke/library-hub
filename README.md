@@ -97,8 +97,31 @@ library-hub/
 │   ├── requirements.md       # Backend functional & non-functional requirements
 │   ├── frontend-concept.md   # Frontend architecture & patterns
 │   └── frontend-requirements.md  # Frontend user stories & requirements
+├── k8s/
+│   ├── infra/                # Kubernetes manifests – infrastructure
+│   │   ├── secrets.yaml      # DB passwords & RabbitMQ credentials
+│   │   ├── catalog-db.yaml   # PostgreSQL for Catalog Service
+│   │   ├── loan-db.yaml      # PostgreSQL for Loan Service
+│   │   └── rabbitmq.yaml     # RabbitMQ broker
+│   ├── apps/                 # Kubernetes manifests – application layer
+│   │   ├── configmap.yaml    # Service URLs (K8s-internal hostnames)
+│   │   ├── catalog-service.yaml
+│   │   ├── loan-service.yaml
+│   │   ├── frontend.yaml     # nginx serving the React SPA + API proxy
+│   │   └── seed-job.yaml     # One-off Job to populate the book catalogue
+│   └── ingress.yaml          # Ingress → libraryhub.local
+├── deploy.ps1                # One-shot deploy script for Minikube (Windows)
 └── docker-compose.yml        # Local infrastructure (PostgreSQL + RabbitMQ)
 ```
+
+### Infrastructure
+
+| Layer         | Technology                              |
+|---------------|-----------------------------------------|
+| Containers    | Docker Desktop                          |
+| Orchestration | Kubernetes (Minikube)                   |
+| API Proxy     | nginx (inside frontend container)       |
+| CI deploy     | `deploy.ps1` (PowerShell, Windows)      |
 
 ---
 
@@ -112,11 +135,22 @@ library-hub/
   ```bash
   pip install uv
   ```
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for the local infrastructure)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (for local infrastructure and Minikube)
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/) (for Kubernetes deployment)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) (bundled with Docker Desktop or installed separately)
+
+There are two ways to run LibraryHub locally:
+
+| Mode | When to use |
+|------|-------------|
+| **Local dev** (docker-compose + uv) | Day-to-day development, fast reload, debugger |
+| **Kubernetes** (Minikube) | Testing the full containerised stack |
 
 ---
 
-### 1 — Start the infrastructure
+### Option A — Local Development (docker-compose + uv)
+
+#### A1 — Start the infrastructure
 
 ```bash
 docker compose up -d
@@ -133,7 +167,7 @@ RabbitMQ Management UI → http://localhost:15672 (user: `guest` / pw: `guest`)
 
 ---
 
-### 2 — Set up the virtual environments
+#### A2 — Set up the virtual environments
 
 Each service has its own isolated environment managed by `uv`:
 
@@ -149,7 +183,7 @@ uv sync
 
 ---
 
-### 3 — Start the backend services
+#### A3 — Start the backend services
 
 Open two terminals:
 
@@ -169,7 +203,7 @@ DB tables are created automatically on first startup (no Alembic migration neede
 
 ---
 
-### 4 — Start the frontend
+#### A4 — Start the frontend
 
 ```bash
 # Terminal 3 – React SPA (port 3000)
@@ -189,7 +223,7 @@ The Vite dev server proxies all API calls automatically – no CORS configuratio
 
 ---
 
-### 5 — Explore the APIs
+#### A5 — Explore the APIs
 
 | Service | Swagger UI | ReDoc |
 |---------|-----------|-------|
@@ -198,7 +232,7 @@ The Vite dev server proxies all API calls automatically – no CORS configuratio
 
 ---
 
-### 6 — Load sample data (optional)
+#### A6 — Load sample data (optional)
 
 ```bash
 docker exec -i libraryhub-catalog-db \
@@ -207,6 +241,111 @@ docker exec -i libraryhub-catalog-db \
 ```
 
 This inserts 10 real books with valid ISBNs and stock counts.
+
+---
+
+### Option B — Kubernetes (Minikube)
+
+Runs the full production-like stack in a local Kubernetes cluster – all services containerised, nginx as reverse proxy, PostgreSQL and RabbitMQ as Pods with persistent volumes.
+
+#### Prerequisites
+
+- [Minikube](https://minikube.sigs.k8s.io/docs/start/) installed
+- Docker Desktop running
+
+> **Windows note – MINIKUBE_HOME:**  
+> If Minikube is installed in `C:\Program Files\...`, set `MINIKUBE_HOME` to a user-writable path to avoid permission errors:
+> ```powershell
+> # Run as Administrator (one-time):
+> [System.Environment]::SetEnvironmentVariable("MINIKUBE_HOME", $null, "Machine")
+> # Then in normal PowerShell:
+> [System.Environment]::SetEnvironmentVariable("MINIKUBE_HOME", "$env:USERPROFILE\.minikube", "User")
+> ```
+
+#### B1 — Deploy everything
+
+```powershell
+# Stop local compose infrastructure first
+docker compose down
+
+# Deploy to Minikube (builds images, starts cluster, applies all manifests)
+.\deploy.ps1
+```
+
+The script will:
+1. Build all 3 Docker images locally (with internet access)
+2. Start a fresh Minikube cluster (docker driver, 4 CPUs, 4 GB RAM)
+3. Enable the nginx Ingress addon
+4. Load images into Minikube via SSH (`docker save` → `minikube cp` → `docker load`)
+5. Apply all `k8s/infra/` manifests and wait for DBs + RabbitMQ to be ready
+6. Apply all `k8s/apps/` manifests and wait for services to be ready
+7. Run the catalog seed Job (10 sample books)
+8. Print the URL and required `hosts` entry
+
+#### B2 — Access the application
+
+> The Minikube Docker driver on Windows does **not** expose the cluster IP directly to the Windows host. Use one of these options:
+
+**Option 1 – Port-forward (simplest, no setup):**
+```powershell
+kubectl port-forward svc/frontend 8080:80
+```
+Open → **http://localhost:8080**
+
+**Option 2 – `minikube tunnel` (persistent, nice URL):**
+```powershell
+# 1. Add hosts entry (run as Administrator, one-time):
+Add-Content "C:\Windows\System32\drivers\etc\hosts" "127.0.0.1  libraryhub.local"
+
+# 2. Keep tunnel running in a separate terminal:
+minikube tunnel
+```
+Open → **http://libraryhub.local**
+
+#### B3 — Useful Kubernetes commands
+
+```powershell
+# Check all pods
+kubectl get pods
+
+# Follow logs of a service
+kubectl logs deployment/catalog-service -f
+kubectl logs deployment/loan-service -f
+
+# RabbitMQ Management UI (guest/guest)
+kubectl port-forward svc/rabbitmq 15672:15672
+# → http://localhost:15672
+
+# Re-run seed job
+kubectl delete job catalog-seed
+kubectl apply -f k8s/apps/seed-job.yaml
+
+# Tear down the cluster completely
+minikube delete
+```
+
+#### B4 — Kubernetes Architecture
+
+```
+                ┌─────────────────────────────────────────┐
+                │          Ingress (nginx)                 │
+                │      libraryhub.local → frontend:80      │
+                └───────────────────┬─────────────────────┘
+                                    │
+                          ┌─────────▼──────────┐
+                          │   frontend Pod      │
+                          │   nginx:1.27        │
+                          │   /api/catalog/ ────┼──► catalog-service:8000
+                          │   /api/loan/    ────┼──► loan-service:8001
+                          └─────────────────────┘
+
+  catalog-service:8000          loan-service:8001
+         │                              │
+         └──────────► rabbitmq:5672 ◄───┘
+         │                              │
+    catalog-db:5432              loan-db:5432
+    (PersistentVolume)           (PersistentVolume)
+```
 
 ---
 
