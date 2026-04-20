@@ -1,0 +1,42 @@
+# ── Ingress for Azure AKS ─────────────────────────────────────────────────────
+# Host is set to the Azure public DNS label.
+# After azure-setup.ps1 completes, update AZURE_DNS_LABEL below if you changed
+# the default, then re-apply: kubectl apply -f k8s/azure/ingress.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: libraryhub-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+    # Replace AZURE_DNS_LABEL with your actual Azure subdomain after setup
+    # e.g. libraryhub.westeurope.cloudapp.azure.com
+    - host: "AZURE_DNS_LABEL"
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 80
+          - path: /api/catalog
+            pathType: Prefix
+            backend:
+              service:
+                name: catalog-service
+                port:
+                  number: 8000
+          - path: /api/loans
+            pathType: Prefix
+            backend:
+              service:
+                name: loan-service
+                port:
+                  number: 8001
+

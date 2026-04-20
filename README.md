@@ -505,6 +505,85 @@ Key settings:
 
 ---
 
+## Cloud Deployment (Azure AKS)
+
+LibraryHub can be deployed to **Azure Kubernetes Service** using the provided scripts and GitHub Actions pipeline.
+
+### Architecture on Azure
+
+```
+  GitHub Actions (on git tag v*)
+       │
+       ▼
+  ┌─────────────────────────────────────────────────────┐
+  │                  Azure Cloud                        │
+  │                                                     │
+  │  ┌────────────────────────────────────────────┐     │
+  │  │  AKS Cluster (Free Control Plane, 1×B2s)   │     │
+  │  │                                            │     │
+  │  │  frontend  catalog-service  loan-service   │     │
+  │  │       └──────────┬──────────────┘          │     │
+  │  │              rabbitmq (Pod)                │     │
+  │  │                                            │     │
+  │  │  nginx Ingress ← Azure Load Balancer       │     │
+  │  └────────────────────────────────────────────┘     │
+  │                                                     │
+  │  Azure Database for PostgreSQL (Flexible Server)    │
+  │  Azure Container Registry (ACR)                     │
+  └─────────────────────────────────────────────────────┘
+       │
+       ▼
+  http://libraryhub.westeurope.cloudapp.azure.com
+```
+
+### One-time Setup
+
+**Prerequisites:** Azure CLI, kubectl, Helm installed and `az login` done.
+
+```powershell
+# Create all Azure resources (Resource Group, AKS, ACR, PostgreSQL, Service Principal)
+.\azure-setup.ps1 -DbCatalogPassword "YourPass1!" -DbLoanPassword "YourPass2!"
+```
+
+The script prints all values needed for the next step at the end.
+
+### GitHub Secrets
+
+Add these secrets to your repository under **Settings → Secrets and variables → Actions**:
+
+| Secret | Source |
+|--------|--------|
+| `AZURE_CREDENTIALS` | Printed by `azure-setup.ps1` (JSON) |
+| `ACR_LOGIN_SERVER` | Printed by `azure-setup.ps1` |
+| `ACR_USERNAME` | Printed by `azure-setup.ps1` |
+| `ACR_PASSWORD` | Printed by `azure-setup.ps1` |
+| `AKS_RESOURCE_GROUP` | `libraryhub-rg` |
+| `AKS_CLUSTER_NAME` | `libraryhub-aks` |
+| `DB_CATALOG_PASSWORD` | Your chosen password |
+| `DB_LOAN_PASSWORD` | Your chosen password |
+
+### Deploying a Release
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+GitHub Actions runs three jobs automatically: **test → build-push → deploy**
+
+### Estimated Monthly Cost
+
+| Resource | Cost |
+|----------|------|
+| AKS Control Plane | free |
+| 1× Standard_B2s Node | ~$30 |
+| Azure DB PostgreSQL (Flexible, Burstable) | free tier |
+| Azure Container Registry (Basic) | ~$5 |
+| Load Balancer | ~$5 |
+| **Total** | **~$40** (covered by $200 new account credit) |
+
+---
+
 ## Documentation
 
 Full architecture and requirements are documented in [`/docs`](docs/):
