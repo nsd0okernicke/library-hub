@@ -22,6 +22,7 @@ metadata:
   labels:
     app: catalog-db
 spec:
+  progressDeadlineSeconds: 600
   replicas: 1
   selector:
     matchLabels:
@@ -55,6 +56,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+              subPath: pgdata
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres", "-d", "catalog_db"]
@@ -111,6 +113,7 @@ metadata:
   labels:
     app: loan-db
 spec:
+  progressDeadlineSeconds: 600
   replicas: 1
   selector:
     matchLabels:
@@ -144,6 +147,7 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/postgresql/data
+              subPath: pgdata
           readinessProbe:
             exec:
               command: ["pg_isready", "-U", "postgres", "-d", "loan_db"]
@@ -200,6 +204,7 @@ metadata:
   labels:
     app: rabbitmq
 spec:
+  progressDeadlineSeconds: 600
   replicas: 1
   selector:
     matchLabels:
@@ -230,8 +235,8 @@ spec:
             - name: data
               mountPath: /var/lib/rabbitmq
           readinessProbe:
-            exec:
-              command: ["rabbitmq-diagnostics", "ping"]
+            tcpSocket:
+              port: 5672
             initialDelaySeconds: 20
             periodSeconds: 10
             failureThreshold: 10
@@ -262,4 +267,10 @@ spec:
     - name: management
       port: 15672
       targetPort: 15672
+
+
+
+
+
+
 

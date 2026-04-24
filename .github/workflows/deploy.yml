@@ -176,11 +176,9 @@ jobs:
       - name: Apply infrastructure (PostgreSQL + RabbitMQ in-cluster)
         run: |
           kubectl apply -f k8s/azure/infra.yaml
-          # Restart pods so they pick up the freshly applied secrets
-          kubectl rollout restart deployment/catalog-db deployment/loan-db deployment/rabbitmq || true
-          kubectl rollout status deployment/catalog-db --timeout=180s
-          kubectl rollout status deployment/loan-db --timeout=180s
-          kubectl rollout status deployment/rabbitmq --timeout=180s
+          kubectl wait --for=condition=available deployment/catalog-db --timeout=300s
+          kubectl wait --for=condition=available deployment/loan-db --timeout=300s
+          kubectl wait --for=condition=available deployment/rabbitmq --timeout=300s
 
       - name: Deploy application services
         run: |
@@ -212,6 +210,7 @@ jobs:
           echo ""
           echo "Ingress:"
           kubectl get ingress
+
 
 
 
