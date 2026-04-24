@@ -24,6 +24,10 @@ eggs/
 lib/
 lib64/
 parts/
+
+# Exception: frontend/src/lib contains TypeScript utility files that must be tracked
+!frontend/src/lib/
+!frontend/src/lib/**
 sdist/
 var/
 wheels/
