@@ -1,10 +1,11 @@
 name: Deploy to Azure AKS
 
-# Triggers only on version tags (e.g. v1.0.0, v1.2.3)
+# Triggers on version tags (e.g. v1.0.0) or manual dispatch
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
 
 env:
   ACR_LOGIN_SERVER: ${{ secrets.ACR_LOGIN_SERVER }}
@@ -150,31 +151,34 @@ jobs:
           sed -i "s|libraryhubackr.azurecr.io/loan-service:latest|$ACR_LOGIN_SERVER/loan-service:$TAG|g" k8s/azure/loan-service.yaml
           sed -i "s|libraryhubackr.azurecr.io/frontend:latest|$ACR_LOGIN_SERVER/frontend:$TAG|g" k8s/azure/frontend.yaml
 
-      - name: Apply infrastructure (RabbitMQ)
-        run: kubectl apply -f k8s/azure/rabbitmq.yaml
+      - name: Apply infrastructure (PostgreSQL + RabbitMQ in-cluster)
+        run: |
+          kubectl apply -f k8s/azure/infra.yaml
+          kubectl rollout status deployment/catalog-db --timeout=120s
+          kubectl rollout status deployment/loan-db --timeout=120s
+          kubectl rollout status deployment/rabbitmq --timeout=120s
 
       - name: Apply ConfigMap
         run: kubectl apply -f k8s/azure/configmap.yaml
 
       - name: Create/update DB URL secrets
         run: |
-          PG_HOST="libraryhub-pg.postgres.database.azure.com"
-          CATALOG_URL="postgresql+asyncpg://pgadmin:${{ secrets.DB_CATALOG_PASSWORD }}@${PG_HOST}/catalog_db?ssl=require"
-          LOAN_URL="postgresql+asyncpg://pgadmin:${{ secrets.DB_LOAN_PASSWORD }}@${PG_HOST}/loan_db?ssl=require"
+          # In-cluster PostgreSQL — no SSL, use service DNS names
+          CATALOG_URL="postgresql+asyncpg://postgres:${{ secrets.DB_CATALOG_PASSWORD }}@catalog-db/catalog_db"
+          LOAN_URL="postgresql+asyncpg://postgres:${{ secrets.DB_LOAN_PASSWORD }}@loan-db/loan_db"
 
           kubectl create secret generic libraryhub-secrets \
+            --from-literal=catalog-db-user="postgres" \
+            --from-literal=catalog-db-password="${{ secrets.DB_CATALOG_PASSWORD }}" \
+            --from-literal=catalog-db-name="catalog_db" \
             --from-literal=catalog-database-url="$CATALOG_URL" \
+            --from-literal=loan-db-user="postgres" \
+            --from-literal=loan-db-password="${{ secrets.DB_LOAN_PASSWORD }}" \
+            --from-literal=loan-db-name="loan_db" \
             --from-literal=loan-database-url="$LOAN_URL" \
             --from-literal=rabbitmq-user="guest" \
             --from-literal=rabbitmq-password="guest" \
-            --from-literal=pg-host="$PG_HOST" \
-            --from-literal=pg-admin-user="pgadmin" \
-            --from-literal=catalog-db-password="${{ secrets.DB_CATALOG_PASSWORD }}" \
-            --from-literal=loan-db-password="${{ secrets.DB_LOAN_PASSWORD }}" \
             --dry-run=client -o yaml | kubectl apply -f -
-
-      - name: Wait for RabbitMQ
-        run: kubectl rollout status deployment/rabbitmq --timeout=120s
 
       - name: Deploy application services
         run: |
@@ -206,5 +210,7 @@ jobs:
           echo ""
           echo "Ingress:"
           kubectl get ingress
+
+
 
 

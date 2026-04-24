@@ -4,21 +4,20 @@ metadata:
   name: libraryhub-config
 data:
   # Non-sensitive configuration values only.
-  # DATABASE_URL is injected by the deploy job (combines host from here + password from GitHub Secret).
-  CATALOG_PG_HOST: "libraryhub-pg.postgres.database.azure.com"
-  CATALOG_PG_USER: "pgadmin"
+  # PostgreSQL runs as in-cluster pods (catalog-db, loan-db services).
+  CATALOG_PG_HOST: "catalog-db"
+  CATALOG_PG_USER: "postgres"
   CATALOG_PG_DB: "catalog_db"
   CATALOG_RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
   CATALOG_RABBITMQ_EXCHANGE: "library.events"
   CATALOG_RABBITMQ_QUEUE_LOAN_REQUESTED: "catalog.loan-requested"
   CATALOG_RABBITMQ_QUEUE_BOOK_RETURNED: "catalog.book-returned"
-  LOAN_PG_HOST: "libraryhub-pg.postgres.database.azure.com"
-  LOAN_PG_USER: "pgadmin"
+  LOAN_PG_HOST: "loan-db"
+  LOAN_PG_USER: "postgres"
   LOAN_PG_DB: "loan_db"
   LOAN_RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
   LOAN_RABBITMQ_EXCHANGE: "library.events"
   LOAN_RABBITMQ_QUEUE_BOOK_RESERVED: "loan.book-reserved"
   LOAN_RABBITMQ_QUEUE_BOOK_OUT_OF_STOCK: "loan.book-out-of-stock"
   LOAN_DURATION_DAYS: "28"
-
 
