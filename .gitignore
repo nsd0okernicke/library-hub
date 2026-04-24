@@ -168,8 +168,8 @@ dmypy.json
 # .idea/ wird NICHT komplett ignoriert – wichtige Konfig-Dateien werden eingecheckt.
 # Persönliche/lokale Dateien sind in .idea/.gitignore ausgeschlossen.
 
-# uv
-uv.lock
+# uv — lock files are committed for reproducible CI builds
+# uv.lock
 
 # Coverage
 .coverage
