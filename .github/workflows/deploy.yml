@@ -151,13 +151,6 @@ jobs:
           sed -i "s|libraryhubackr.azurecr.io/loan-service:latest|$ACR_LOGIN_SERVER/loan-service:$TAG|g" k8s/azure/loan-service.yaml
           sed -i "s|libraryhubackr.azurecr.io/frontend:latest|$ACR_LOGIN_SERVER/frontend:$TAG|g" k8s/azure/frontend.yaml
 
-      - name: Apply infrastructure (PostgreSQL + RabbitMQ in-cluster)
-        run: |
-          kubectl apply -f k8s/azure/infra.yaml
-          kubectl rollout status deployment/catalog-db --timeout=120s
-          kubectl rollout status deployment/loan-db --timeout=120s
-          kubectl rollout status deployment/rabbitmq --timeout=120s
-
       - name: Apply ConfigMap
         run: kubectl apply -f k8s/azure/configmap.yaml
 
@@ -179,6 +172,15 @@ jobs:
             --from-literal=rabbitmq-user="guest" \
             --from-literal=rabbitmq-password="guest" \
             --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Apply infrastructure (PostgreSQL + RabbitMQ in-cluster)
+        run: |
+          kubectl apply -f k8s/azure/infra.yaml
+          # Restart pods so they pick up the freshly applied secrets
+          kubectl rollout restart deployment/catalog-db deployment/loan-db deployment/rabbitmq || true
+          kubectl rollout status deployment/catalog-db --timeout=180s
+          kubectl rollout status deployment/loan-db --timeout=180s
+          kubectl rollout status deployment/rabbitmq --timeout=180s
 
       - name: Deploy application services
         run: |
@@ -210,6 +212,7 @@ jobs:
           echo ""
           echo "Ingress:"
           kubectl get ingress
+
 
 
 
