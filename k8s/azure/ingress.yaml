@@ -20,7 +20,7 @@ spec:
                 name: catalog-service
                 port:
                   number: 8000
-          - path: /api/loans(/|$)(.*)
+          - path: /api/loan(/|$)(.*)
             pathType: ImplementationSpecific
             backend:
               service:
@@ -48,3 +48,4 @@ spec:
                 name: frontend
                 port:
                   number: 80
+
