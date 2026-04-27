@@ -1,15 +1,13 @@
-# ── Ingress for Azure AKS ─────────────────────────────────────────────────────
-# Uses nip.io wildcard DNS — no manual DNS configuration needed.
-# The hostname is automatically derived from the LoadBalancer IP.
-# e.g. IP 4.175.63.160 → 4.175.63.160.nip.io
+# ── Ingress for Azure AKS: API routes (with path rewrite) ─────────────────────
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: libraryhub-ingress
+  name: libraryhub-api-ingress
   annotations:
     nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
     nginx.ingress.kubernetes.io/use-regex: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   ingressClassName: nginx
   rules:
@@ -29,6 +27,20 @@ spec:
                 name: loan-service
                 port:
                   number: 8001
+---
+# ── Ingress for Azure AKS: Frontend (no rewrite) ──────────────────────────────
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: libraryhub-frontend-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
           - path: /
             pathType: Prefix
             backend:
