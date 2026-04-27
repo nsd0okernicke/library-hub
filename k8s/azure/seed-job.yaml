@@ -11,50 +11,24 @@ spec:
     spec:
       restartPolicy: OnFailure
       initContainers:
-        # Wait until Azure PostgreSQL is reachable before running psql
+        # Wait until in-cluster catalog-db PostgreSQL is reachable before running psql
         - name: wait-for-db
           image: postgres:16-alpine
           command:
             - sh
             - -c
             - |
-              until pg_isready -h $(PG_HOST) -U $(PG_USER) -d catalog_db; do
-                echo "Waiting for Azure PostgreSQL..."; sleep 3;
+              until pg_isready -h catalog-db -U postgres -d catalog_db; do
+                echo "Waiting for catalog-db..."; sleep 3;
               done
-          env:
-            - name: PG_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: libraryhub-secrets
-                  key: pg-host
-            - name: PG_USER
-              valueFrom:
-                secretKeyRef:
-                  name: libraryhub-secrets
-                  key: pg-admin-user
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: libraryhub-secrets
-                  key: catalog-db-password
       containers:
         - name: seed
           image: postgres:16-alpine
           command:
             - sh
             - -c
-            - psql "host=$(PG_HOST) dbname=catalog_db user=$(PG_USER) sslmode=require" -f /seed/seed_books.sql
+            - psql "host=catalog-db dbname=catalog_db user=postgres sslmode=disable" -f /seed/seed_books.sql
           env:
-            - name: PG_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: libraryhub-secrets
-                  key: pg-host
-            - name: PG_USER
-              valueFrom:
-                secretKeyRef:
-                  name: libraryhub-secrets
-                  key: pg-admin-user
             - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
@@ -99,4 +73,5 @@ data:
       ('9780743273565', 15),
       ('9780451524935', 14)
     ON CONFLICT (isbn) DO UPDATE SET available_count = EXCLUDED.available_count;
+
 
